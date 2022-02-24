@@ -4,23 +4,51 @@ using UnityEngine;
 
 public class Node : MonoBehaviour
 {
-    public List<Node> neighbors;
-    private GameObject selector;
+    // Store the neighbor nodes in terms of 2D direction
+    public Dictionary<Vector2Int, Node> neighbors;
+    public Dictionary<Vector2Int, Node> available;
 
-    public void SetSelector(bool state)
-    {
-        selector.SetActive(state);
-    }
+    public Selector selector;
+    public Highlight highlight;
 
-    // Start is called before the first frame update
     void Awake()
     {
-        selector = transform.Find("Selection").gameObject;
+        neighbors = new Dictionary<Vector2Int, Node>();
+        available = new Dictionary<Vector2Int, Node>();
+        selector = GetComponent<Selector>();
+        selector.OnIndicatorChange.AddListener(IndicatorChanged);
+        selector.OnInteraction.AddListener(Interacted);
+
+        highlight = GetComponent<Highlight>();
+
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Reset()
     {
-        
+        // Sets the neighbors to availableNeighbors
+        available = neighbors;
     }
+
+    public void Interacted()
+    {
+        if (highlight.IsHighlighted())
+        {
+            GameMgr.instance.MoveBallToNode(this);
+        }
+
+    }
+
+    public void IndicatorChanged()
+    {
+        // does nothing for now
+    }
+
+    public void ToggleOptions(bool active)
+    {
+        foreach (KeyValuePair<Vector2Int, Node> neighbor in available)
+        {
+            neighbor.Value.highlight.SetState(true);
+        }
+    }
+
 }

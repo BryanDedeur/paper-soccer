@@ -14,7 +14,12 @@ public class GameMgr : MonoBehaviour
     public GameObject ball;
     public Node ballNode;
 
-    private List<Node> nodes;
+    private GameObject nodeContainer;
+
+    private const int boardWidth = 9;
+    private const int boardLength = 11;
+
+    private List<List<Node>> nodes;
     private static int nodeCount;
 
     private void Awake()
@@ -28,8 +33,9 @@ public class GameMgr : MonoBehaviour
         }
 
         // Board creation stuff
-        CreateNodes();
-        FindNeighbors();
+        CreateNodes(boardWidth,boardLength);
+        CacheNeighbors();
+        ResetBoard();
     }
 
     private void Start()
@@ -37,67 +43,68 @@ public class GameMgr : MonoBehaviour
         StartRound();
     }
 
-    private void CreateNode(Vector3 pos)
+    private Node CreateNode(Vector3 pos)
     {
+        // Creates a node game object with a node component
         GameObject newNode = Instantiate(nodePrefab);
         newNode.transform.position = pos;
+        newNode.transform.parent = nodeContainer.transform;
         Node node = newNode.GetComponent<Node>();
-        nodes.Add(node);
         node.name = "Node" + nodeCount.ToString();
         nodeCount++;
+        return node;
     }
 
-    private void CreateNodes()
+    private void CreateNodes(int dimX, int dimZ, float spacing = 2)
     {
+        // Creates the 2d grid of nodes
         Vector3 startPos = new Vector3(-8, 0, -10);
-        float stepSize = 2;
+        nodeContainer = new GameObject();
+        nodeContainer.name = "Nodes";
 
-        int length = 11;
-        int width = 9;
-
-        nodes = new List<Node>();
-        nodeCount = 0;
-        for (int z = 0; z < length; z++)
+        nodes = new List<List<Node>>();
+        for (int z = 0; z < dimZ; z++)
         {
-            for (int x = 0; x < width; x++)
+            nodes.Add(new List<Node>());
+            for (int x = 0; x < dimX; x++)
             {
-                CreateNode(new Vector3(startPos.x + x * stepSize, 0.01f, startPos.z + z * stepSize));
+                Node node = CreateNode(new Vector3(startPos.x + x * spacing, 0.01f, startPos.z + z * spacing));
+                nodes[z].Add(node);
             }
         }
-        CreateNode(new Vector3(startPos.x + ((int)(width / 2)) * stepSize, 0.01f, startPos.z + (-1 * stepSize)));
-        CreateNode(new Vector3(startPos.x + ((int)(width / 2)) * stepSize, 0.01f, startPos.z + (length * stepSize)));
 
+        // Creates extra nodes on the sides of the board
+ /*       CreateNode(new Vector3(startPos.x + ((int)(width / 2)) * stepSize, 0.01f, startPos.z + (-1 * stepSize)));
+        CreateNode(new Vector3(startPos.x + ((int)(width / 2)) * stepSize, 0.01f, startPos.z + (length * stepSize)));*/
     }
 
-    private void FindNeighbors()
+    public void MoveBallToNode(Node node)
     {
-        foreach (Node node in nodes)
-        {
-            foreach (Node otherNode in nodes)
-            {
-                if (otherNode != node)
-                {
-                    if (Mathf.Abs(node.transform.position.x - otherNode.transform.position.x) < 2.5f)
-                    {
-                        if (Mathf.Abs(node.transform.position.z - otherNode.transform.position.z) < 2.5f)
-                        {
-                            node.neighbors.Add(otherNode);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public void SetBallNode(Node node)
-    {
+        // Relocates the ball to this node
         ballNode = node;
         ball.transform.position = node.transform.position;
+        HighlightMgr.instance.DeselectAll();
+        ballNode.ToggleOptions(true);
+    }
+
+    private void ResetBoard()
+    {
+        // Resets all the data necessary to restart a new round
+        foreach(List<Node> nodeRow in nodes)
+        {
+            foreach(Node node in nodeRow)
+            {
+                node.Reset();
+            }
+        }
+
+        // Moves the ball to the center
+        Node middleNode = nodes[Mathf.RoundToInt(boardLength / 2)][Mathf.RoundToInt(boardWidth / 2)];
+        MoveBallToNode(middleNode);
     }
 
     private void StartRound()
     {
-        SetBallNode(nodes[49]);
         int startPlayer = Random.Range(0, 2);
         if (startPlayer == 0)
         {
@@ -106,24 +113,113 @@ public class GameMgr : MonoBehaviour
         {
             activePlayer = player2;
         }
-        ShowOptions();
-    }
-
-    public void ShowOptions()
-    {
-        foreach (Node neighbor in ballNode.neighbors)
-        {
-            neighbor.SetSelector(true);
-        }
-    }
-
-    public void SubmitMoves()
-    {
-
+        ballNode.ToggleOptions(true);
     }
 
     private void Update()
     {
         
+    }
+
+    private void CacheNeighbors()
+    {
+        /*
+        This will update every nodes list of neighbors for quick access later. 
+
+            N.W   N   N.E
+              \   |   /
+               \  |  /
+            W----Cell----E
+                / | \
+              /   |  \
+            S.W   S   S.E
+
+        Cell-->Current Cell (i, j)
+        N -->  North       (i-1, j)
+        S -->  South       (i+1, j)
+        E -->  East        (i, j+1)
+        W -->  West           (i, j-1)
+        N.E--> North-East  (i-1, j+1)
+        N.W--> North-West  (i-1, j-1)
+        S.E--> South-East  (i+1, j+1)
+        S.W--> South-West  (i+1, j-1)*/
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            for (int j = 0; j < nodes[i].Count; j++)
+            {
+                if (i > 0 && j > 0 && i < nodes.Count - 1 && j < nodes[i].Count - 1)
+                {
+                    // Not at a boundary we can add all successors
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,-1), nodes[i - 1][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,-1), nodes[i + 1][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,1), nodes[i - 1][j + 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,1), nodes[i + 1][j + 1]);
+                }
+                else if (i == 0 && j == 0)
+                {
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,1), nodes[i + 1][j + 1]);
+                }
+                else if (i == 0 && j == nodes[i].Count - 1)
+                {
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,-1), nodes[i + 1][j - 1]);
+                }
+                else if (i == nodes.Count - 1 && j == 0)
+                {
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,1), nodes[i - 1][j + 1]);
+                }
+                else if (i == nodes.Count - 1 && j == nodes[i].Count - 1)
+                {
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,-1), nodes[i - 1][j - 1]);
+                }
+                else if (i == 0)
+                {
+                    // no i -
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,-1), nodes[i + 1][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,1), nodes[i + 1][j + 1]);
+                }
+                else if (i == nodes.Count - 1)
+                {
+                    // no i +
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,-1), nodes[i - 1][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,1), nodes[i - 1][j + 1]);
+                }
+                else if (j == 0)
+                {
+                    // no j -
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,1), nodes[i - 1][j + 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,1), nodes[i + 1][j + 1]);
+                }
+                else if (j == nodes[i].Count - 1)
+                {
+                    // no j +
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(-1,-1), nodes[i - 1][j - 1]);
+                        nodes[i][j].neighbors.Add(new Vector2Int(1,-1), nodes[i + 1][j - 1]);
+                }
+            }
+        }
     }
 }
