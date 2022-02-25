@@ -34,12 +34,12 @@ public class GameMgr : MonoBehaviour
 
         // Board creation stuff
         CreateNodes(boardWidth,boardLength);
-        CacheNeighbors();
-        ResetBoard();
+        ResetAllNodeOptions();
     }
 
     private void Start()
     {
+        ResetBoard();
         StartRound();
     }
 
@@ -80,23 +80,30 @@ public class GameMgr : MonoBehaviour
 
     public void MoveBallToNode(Node node)
     {
-        // Relocates the ball to this node
+        // Remove the possibility of doing the same move
+        if (ballNode != null)
+        {
+            ballNode.options.Remove(node);
+
+            LineRenderer lr = node.gameObject.AddComponent<LineRenderer>();
+            lr.SetPosition(0, node.transform.position);
+            lr.SetPosition(1, ballNode.transform.position);
+            lr.startWidth = 0.3f;
+        }
+        node.options.Remove(ballNode);
+
+
+
         ballNode = node;
         ball.transform.position = node.transform.position;
         HighlightMgr.instance.DeselectAll();
-        ballNode.ToggleOptions(true);
+        ShowOptions();
     }
 
     private void ResetBoard()
     {
         // Resets all the data necessary to restart a new round
-        foreach(List<Node> nodeRow in nodes)
-        {
-            foreach(Node node in nodeRow)
-            {
-                node.Reset();
-            }
-        }
+        ResetAllNodeOptions();
 
         // Moves the ball to the center
         Node middleNode = nodes[Mathf.RoundToInt(boardLength / 2)][Mathf.RoundToInt(boardWidth / 2)];
@@ -113,7 +120,14 @@ public class GameMgr : MonoBehaviour
         {
             activePlayer = player2;
         }
-        ballNode.ToggleOptions(true);
+    }
+
+    private void ShowOptions()
+    {
+        foreach (Node neighbor in ballNode.options)
+        {
+            neighbor.highlight.SetState(true);
+        }
     }
 
     private void Update()
@@ -121,7 +135,7 @@ public class GameMgr : MonoBehaviour
         
     }
 
-    private void CacheNeighbors()
+    private void ResetAllNodeOptions()
     {
         /*
         This will update every nodes list of neighbors for quick access later. 
@@ -139,85 +153,86 @@ public class GameMgr : MonoBehaviour
         S -->  South       (i+1, j)
         E -->  East        (i, j+1)
         W -->  West           (i, j-1)
-        N.E--> North-East  (i-1, j+1)
-        N.W--> North-West  (i-1, j-1)
-        S.E--> South-East  (i+1, j+1)
-        S.W--> South-West  (i+1, j-1)*/
+        A--> North-East  (i-1, j+1)
+        B--> North-West  (i-1, j-1)
+        C--> South-East  (i+1, j+1)
+        D--> South-West  (i+1, j-1)*/
         for (int i = 0; i < nodes.Count; i++)
         {
             for (int j = 0; j < nodes[i].Count; j++)
             {
+                nodes[i][j].options.Clear();
                 if (i > 0 && j > 0 && i < nodes.Count - 1 && j < nodes[i].Count - 1)
                 {
                     // Not at a boundary we can add all successors
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,-1), nodes[i - 1][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,-1), nodes[i + 1][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,1), nodes[i - 1][j + 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,1), nodes[i + 1][j + 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j]);
+                        nodes[i][j].options.Add(nodes[i + 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j - 1]);
+                        nodes[i][j].options.Add(nodes[i][j + 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j - 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j - 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j + 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j + 1]);
                 }
                 else if (i == 0 && j == 0)
                 {
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,1), nodes[i + 1][j + 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j + 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j + 1]);
                 }
                 else if (i == 0 && j == nodes[i].Count - 1)
                 {
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,-1), nodes[i + 1][j - 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j - 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j - 1]);
                 }
                 else if (i == nodes.Count - 1 && j == 0)
                 {
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,1), nodes[i - 1][j + 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j + 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j + 1]);
                 }
                 else if (i == nodes.Count - 1 && j == nodes[i].Count - 1)
                 {
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,-1), nodes[i - 1][j - 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j - 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j - 1]);
                 }
                 else if (i == 0)
                 {
                     // no i -
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,-1), nodes[i + 1][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,1), nodes[i + 1][j + 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j - 1]);
+                        nodes[i][j].options.Add(nodes[i][j + 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j - 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j + 1]);
                 }
                 else if (i == nodes.Count - 1)
                 {
                     // no i +
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,-1), nodes[i - 1][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,1), nodes[i - 1][j + 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j - 1]);
+                        nodes[i][j].options.Add(nodes[i][j + 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j - 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j + 1]);
                 }
                 else if (j == 0)
                 {
                     // no j -
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,1), nodes[i][j + 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,1), nodes[i - 1][j + 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,1), nodes[i + 1][j + 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j]);
+                        nodes[i][j].options.Add(nodes[i + 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j + 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j + 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j + 1]);
                 }
                 else if (j == nodes[i].Count - 1)
                 {
                     // no j +
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,0), nodes[i - 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,0), nodes[i + 1][j]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(0,-1), nodes[i][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(-1,-1), nodes[i - 1][j - 1]);
-                        nodes[i][j].neighbors.Add(new Vector2Int(1,-1), nodes[i + 1][j - 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j]);
+                        nodes[i][j].options.Add(nodes[i + 1][j]);
+                        nodes[i][j].options.Add(nodes[i][j - 1]);
+                        nodes[i][j].options.Add(nodes[i - 1][j - 1]);
+                        nodes[i][j].options.Add(nodes[i + 1][j - 1]);
                 }
             }
         }

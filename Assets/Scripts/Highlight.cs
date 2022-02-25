@@ -10,14 +10,16 @@ public class Highlight : MonoBehaviour
 
     private void Awake()
     {
-        HighlightMgr.instance.highlightable.Add(this);
-
         // Create the selection indicator
         highlightIndicator = Instantiate(HighlightMgr.instance.highlightPrefab);
-        highlightIndicator.transform.position = transform.position - new Vector3(0,-0.01f,0);
+        highlightIndicator.transform.position = transform.position - new Vector3(0, -0.01f, 0);
         highlightIndicator.transform.parent = transform;
+        highlightIndicator.SetActive(false);
+    }
 
-        SetState(false);
+    private void Start()
+    {
+        HighlightMgr.instance.highlightable.Add(this);
     }
 
     private void OnDestroy()

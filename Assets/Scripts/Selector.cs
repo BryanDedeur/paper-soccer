@@ -10,7 +10,7 @@ public class Selector : MonoBehaviour
     public UnityEvent OnIndicatorChange; // fires when selection indicator changes
     public UnityEvent OnInteraction; // fires when click is in range
 
-    private void Awake()
+    private void Start()
     {
         SelectionMgr.instance.selectors.Add(this);
 
