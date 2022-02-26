@@ -21,7 +21,7 @@ public class LineMgr : MonoBehaviour
         container.name = "Lines";
     }
 
-    public LineRenderer CreateLine(Vector3 start, Vector3 end, float width = 0.2f)
+    public LineRenderer CreateLine(Vector3 start, Vector3 end, Material mat, float width = 0.2f)
     {
         count++;
         GameObject lineObject = new GameObject();
@@ -32,6 +32,10 @@ public class LineMgr : MonoBehaviour
         lr.startWidth = width;
         lr.SetPosition(0, start);
         lr.SetPosition(1, end);
+        lr.material = mat;
+        lr.receiveShadows = false;
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lr.generateLightingData = true;
         return lr;
     }
 }

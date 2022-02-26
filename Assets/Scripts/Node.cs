@@ -9,25 +9,19 @@ public class Node : MonoBehaviour
 
     public Selector selector;
     public Highlight highlight;
+    public Interactable interactable;
 
     void Awake()
     {
         options = new List<Node>();
-        selector = GetComponent<Selector>();
-        selector.OnIndicatorChange.AddListener(IndicatorChanged);
-        selector.OnInteraction.AddListener(Interacted);
-
+        interactable = GetComponent<Interactable>();
+        interactable.OnInteraction.AddListener(Interacted);
         highlight = GetComponent<Highlight>();
-
     }
 
     public void Interacted()
     {
-        if (highlight.IsHighlighted())
-        {
-            GameMgr.instance.MoveBallToNode(this);
-        }
-
+        GameMgr.instance.MoveBallToNode(this);
     }
 
     public void IndicatorChanged()

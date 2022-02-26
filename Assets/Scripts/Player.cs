@@ -6,7 +6,7 @@ public class Player : MonoBehaviour
 {
 
     public bool placing = false;
-
+    public Material material;
 
 
 }

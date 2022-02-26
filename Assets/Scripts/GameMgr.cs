@@ -78,7 +78,6 @@ public class GameMgr : MonoBehaviour
 
         // Creates extra nodes for the goals
         goal1Node = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (-1 * spacing)));
-
         goal2Node = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (dimZ * spacing)));
     }
 
@@ -87,15 +86,37 @@ public class GameMgr : MonoBehaviour
         // Remove the possibility of doing the same move
         if (ballNode != null)
         {
+
             ballNode.options.Remove(node);
-            LineMgr.instance.CreateLine(node.transform.position, ballNode.transform.position);
+            LineMgr.instance.CreateLine(node.transform.position, ballNode.transform.position, activePlayer.material);
+            // Hide the options
+            while (InteractableMgr.instance.active.Count > 0)
+            {
+                InteractableMgr.instance.active[0].SetState(false);
+            }
+        }
+
+        if (node.options.Count == 8)
+        {
+            SwitchPlayers();
         }
         node.options.Remove(ballNode);
-
         ballNode = node;
         ball.transform.position = node.transform.position;
         HighlightMgr.instance.DeselectAll();
         ShowOptions();
+    }
+
+    private void SwitchPlayers()
+    {
+        if (activePlayer == player2)
+        {
+            activePlayer = player1;
+        }
+        else
+        {
+            activePlayer = player2;
+        }
     }
 
     private void ResetBoard()
@@ -125,6 +146,7 @@ public class GameMgr : MonoBehaviour
         foreach (Node neighbor in ballNode.options)
         {
             neighbor.highlight.SetState(true);
+            neighbor.interactable.SetState(true);
         }
     }
 
