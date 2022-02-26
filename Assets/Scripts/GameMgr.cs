@@ -20,6 +20,9 @@ public class GameMgr : MonoBehaviour
     private const int boardLength = 11;
 
     private List<List<Node>> nodes;
+    private Node goal1Node;
+    private Node goal2Node;
+
     private static int nodeCount;
 
     private void Awake()
@@ -73,9 +76,10 @@ public class GameMgr : MonoBehaviour
             }
         }
 
-        // Creates extra nodes on the sides of the board
- /*       CreateNode(new Vector3(startPos.x + ((int)(width / 2)) * stepSize, 0.01f, startPos.z + (-1 * stepSize)));
-        CreateNode(new Vector3(startPos.x + ((int)(width / 2)) * stepSize, 0.01f, startPos.z + (length * stepSize)));*/
+        // Creates extra nodes for the goals
+        goal1Node = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (-1 * spacing)));
+
+        goal2Node = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (dimZ * spacing)));
     }
 
     public void MoveBallToNode(Node node)
@@ -84,15 +88,9 @@ public class GameMgr : MonoBehaviour
         if (ballNode != null)
         {
             ballNode.options.Remove(node);
-
-            LineRenderer lr = node.gameObject.AddComponent<LineRenderer>();
-            lr.SetPosition(0, node.transform.position);
-            lr.SetPosition(1, ballNode.transform.position);
-            lr.startWidth = 0.3f;
+            LineMgr.instance.CreateLine(node.transform.position, ballNode.transform.position);
         }
         node.options.Remove(ballNode);
-
-
 
         ballNode = node;
         ball.transform.position = node.transform.position;
@@ -165,76 +163,97 @@ public class GameMgr : MonoBehaviour
                 if (i > 0 && j > 0 && i < nodes.Count - 1 && j < nodes[i].Count - 1)
                 {
                     // Not at a boundary we can add all successors
-                        nodes[i][j].options.Add(nodes[i - 1][j]);
-                        nodes[i][j].options.Add(nodes[i + 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j - 1]);
-                        nodes[i][j].options.Add(nodes[i][j + 1]);
-                        nodes[i][j].options.Add(nodes[i - 1][j - 1]);
-                        nodes[i][j].options.Add(nodes[i + 1][j - 1]);
-                        nodes[i][j].options.Add(nodes[i - 1][j + 1]);
-                        nodes[i][j].options.Add(nodes[i + 1][j + 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j]);
+                    nodes[i][j].options.Add(nodes[i + 1][j]);
+                    nodes[i][j].options.Add(nodes[i][j - 1]);
+                    nodes[i][j].options.Add(nodes[i][j + 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j - 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j - 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j + 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j + 1]);
                 }
                 else if (i == 0 && j == 0)
                 {
-                        nodes[i][j].options.Add(nodes[i + 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j + 1]);
-                        nodes[i][j].options.Add(nodes[i + 1][j + 1]);
+                    //nodes[i][j].options.Add(nodes[i + 1][j]);
+                    //nodes[i][j].options.Add(nodes[i][j + 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j + 1]);
                 }
                 else if (i == 0 && j == nodes[i].Count - 1)
                 {
-                        nodes[i][j].options.Add(nodes[i + 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j - 1]);
-                        nodes[i][j].options.Add(nodes[i + 1][j - 1]);
+                    //nodes[i][j].options.Add(nodes[i + 1][j]);
+                    //nodes[i][j].options.Add(nodes[i][j - 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j - 1]);
                 }
                 else if (i == nodes.Count - 1 && j == 0)
                 {
-                        nodes[i][j].options.Add(nodes[i - 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j + 1]);
-                        nodes[i][j].options.Add(nodes[i - 1][j + 1]);
+                    //nodes[i][j].options.Add(nodes[i - 1][j]);
+                    //nodes[i][j].options.Add(nodes[i][j + 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j + 1]);
                 }
                 else if (i == nodes.Count - 1 && j == nodes[i].Count - 1)
                 {
-                        nodes[i][j].options.Add(nodes[i - 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j - 1]);
-                        nodes[i][j].options.Add(nodes[i - 1][j - 1]);
+                    //nodes[i][j].options.Add(nodes[i - 1][j]);
+                    //nodes[i][j].options.Add(nodes[i][j - 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j - 1]);
                 }
                 else if (i == 0)
                 {
                     // no i -
-                        nodes[i][j].options.Add(nodes[i + 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j - 1]);
-                        nodes[i][j].options.Add(nodes[i][j + 1]);
-                        nodes[i][j].options.Add(nodes[i + 1][j - 1]);
-                        nodes[i][j].options.Add(nodes[i + 1][j + 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j]);
+                    //nodes[i][j].options.Add(nodes[i][j - 1]);
+                    //nodes[i][j].options.Add(nodes[i][j + 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j - 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j + 1]);
                 }
                 else if (i == nodes.Count - 1)
                 {
                     // no i +
-                        nodes[i][j].options.Add(nodes[i - 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j - 1]);
-                        nodes[i][j].options.Add(nodes[i][j + 1]);
-                        nodes[i][j].options.Add(nodes[i - 1][j - 1]);
-                        nodes[i][j].options.Add(nodes[i - 1][j + 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j]);
+                    //nodes[i][j].options.Add(nodes[i][j - 1]);
+                    //nodes[i][j].options.Add(nodes[i][j + 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j - 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j + 1]);
                 }
                 else if (j == 0)
                 {
                     // no j -
-                        nodes[i][j].options.Add(nodes[i - 1][j]);
-                        nodes[i][j].options.Add(nodes[i + 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j + 1]);
-                        nodes[i][j].options.Add(nodes[i - 1][j + 1]);
-                        nodes[i][j].options.Add(nodes[i + 1][j + 1]);
+                    //nodes[i][j].options.Add(nodes[i - 1][j]);
+                    //nodes[i][j].options.Add(nodes[i + 1][j]);
+                    nodes[i][j].options.Add(nodes[i][j + 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j + 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j + 1]);
                 }
                 else if (j == nodes[i].Count - 1)
                 {
                     // no j +
-                        nodes[i][j].options.Add(nodes[i - 1][j]);
-                        nodes[i][j].options.Add(nodes[i + 1][j]);
-                        nodes[i][j].options.Add(nodes[i][j - 1]);
-                        nodes[i][j].options.Add(nodes[i - 1][j - 1]);
-                        nodes[i][j].options.Add(nodes[i + 1][j - 1]);
+                    //nodes[i][j].options.Add(nodes[i - 1][j]);
+                    //nodes[i][j].options.Add(nodes[i + 1][j]);
+                    nodes[i][j].options.Add(nodes[i][j - 1]);
+                    nodes[i][j].options.Add(nodes[i - 1][j - 1]);
+                    nodes[i][j].options.Add(nodes[i + 1][j - 1]);
                 }
             }
         }
+
+        // Add special options around goals
+        // Goal 1
+        nodes[0][(int)(nodes[0].Count / 2f) + 1].options.Add(goal1Node);
+        nodes[0][(int)(nodes[0].Count / 2f)].options.Add(goal1Node);
+        nodes[0][(int)(nodes[0].Count / 2f) - 1].options.Add(goal1Node);
+        // Add side nodes
+        nodes[0][(int)(nodes[0].Count / 2f) - 1].options.Add(nodes[0][(int)(nodes[0].Count / 2f)]);
+        nodes[0][(int)(nodes[0].Count / 2f)].options.Add(nodes[0][(int)(nodes[0].Count / 2f) + 1]);
+        nodes[0][(int)(nodes[0].Count / 2f)].options.Add(nodes[0][(int)(nodes[0].Count / 2f) - 1]);
+        nodes[0][(int)(nodes[0].Count / 2f) + 1].options.Add(nodes[0][(int)(nodes[0].Count / 2f)]);
+
+        // Goal 2
+        nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) - 1].options.Add(goal2Node);
+        nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f)].options.Add(goal2Node);
+        nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) + 1].options.Add(goal2Node);
+        // Add side nodes
+        nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) - 1].options.Add(nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f)]);
+        nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f)].options.Add(nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) + 1]);
+        nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f)].options.Add(nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) - 1]);
+        nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) + 1].options.Add(nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f)]);
     }
 }
