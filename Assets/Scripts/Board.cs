@@ -118,6 +118,7 @@ public class Board
 
     public List<Coordinate> GetOptions(Coordinate cor)
     {
+        // TODO consider perimiter
         List<Coordinate> options = new List<Coordinate>();
         if (IsBitSet(nodes[cor.i - 1, cor.j], 0)) // N
             options.Add(new Coordinate(cor.i - 1, cor.j));
