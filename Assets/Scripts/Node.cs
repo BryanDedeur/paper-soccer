@@ -21,7 +21,7 @@ public class Node : MonoBehaviour
 
     public void Interacted()
     {
-        GameMgr.instance.MoveBallToNode(this);
+        //GameMgr.instance.MoveBallToNode(this);
     }
 
     public void IndicatorChanged()
