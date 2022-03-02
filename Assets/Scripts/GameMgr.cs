@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.Events;
 using UnityEngine;
 
 public class GameMgr : MonoBehaviour
@@ -14,6 +15,11 @@ public class GameMgr : MonoBehaviour
     public GameObject ball;
 
     public List<Vector2Int> moves;
+
+    // Events
+    public UnityEvent GameOver;
+    public UnityEvent PlayersChanged;
+    public UnityEvent BallMoved;
 
     private GameObject nodeContainer;
 
@@ -42,6 +48,7 @@ public class GameMgr : MonoBehaviour
         board = new Board(boardWidth, boardLength);
         CreateNodes(boardWidth, boardLength);
         RandomizePlayer();
+        ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
 
 /*        nodesBin = new uint[boardWidth, boardLength];
         print(BitCount(N));
@@ -52,7 +59,6 @@ public class GameMgr : MonoBehaviour
 
     private void Start()
     {
-        Move(Directions.N);
 
     }
 
@@ -104,19 +110,33 @@ public class GameMgr : MonoBehaviour
 
     public void Move(Directions direction)
     {
-        if (board.IsValidMove(direction))
+        if (!board.gameOver)
         {
-            board.MakeMove(direction);
-            LineMgr.instance.CreateLine(
-                nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
-                nodes[board.curCordinate.i, board.curCordinate.j].transform.position,
-                activePlayer.material);
-            ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
-            if (board.AtOpenNode())
+            if (board.IsValidMove(direction))
             {
-                SwitchPlayers();
+                HideOptions();
+                bool gameOverReached = board.MakeMove(activePlayer.id, direction);
+                LineMgr.instance.CreateLine(
+                    nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
+                    nodes[board.curCordinate.i, board.curCordinate.j].transform.position,
+                    activePlayer.material);
+                ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
+
+                if (gameOverReached)
+                {
+                    GameOver.Invoke();
+                } else
+                {
+                    if (board.AtOpenNode())
+                    {
+                        SwitchPlayers();
+                    }
+                    ShowOptions();
+                }
+
             }
         }
+
     }
 
     private void SwitchPlayers()
@@ -129,6 +149,7 @@ public class GameMgr : MonoBehaviour
         {
             activePlayer = player2;
         }
+        PlayersChanged.Invoke();
     }
 
     private void ResetBoard()
@@ -142,15 +163,27 @@ public class GameMgr : MonoBehaviour
         MoveToNode(i,j);*/
     }
 
-
+    private void HideOptions()
+    {
+        foreach (Coordinate cord in board.GetOptions(board.curCordinate))
+        {
+            nodes[cord.i, cord.j].highlight.SetState(false);
+            nodes[cord.i, cord.j].interactable.SetState(false);
+        }
+    }
 
     private void ShowOptions()
     {
-/*        foreach (Node neighbor in ballNode.options)
+        foreach (Coordinate cord in board.GetOptions(board.curCordinate))
         {
-            neighbor.highlight.SetState(true);
-            neighbor.interactable.SetState(true);
-        }*/
+            nodes[cord.i, cord.j].highlight.SetState(true);
+            nodes[cord.i, cord.j].interactable.SetState(true);
+        }
+        /*        foreach (Node neighbor in ballNode.options)
+                {
+                    neighbor.highlight.SetState(true);
+                    neighbor.interactable.SetState(true);
+                }*/
     }
 
     private void Update()

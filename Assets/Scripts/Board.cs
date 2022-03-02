@@ -58,11 +58,18 @@ public class Board
     public Coordinate curCordinate;
     public Coordinate prevCordinate;
 
+    // stats
+    public uint moves = 0;
+    public uint[] playerMoves;
+
+    public bool gameOver = false;
+
     public Board(uint _rows, uint _cols)
     {
         nodes = new uint[_rows, _cols];
         rows = _rows;
         cols = _cols;
+        playerMoves = new uint[2];
         Reset();
     }
 
@@ -124,6 +131,10 @@ public class Board
 
         // Set the starting position
         curCordinate = new Coordinate((byte)(rows * 0.5f), (byte)(cols * 0.5f));
+        gameOver = false;
+        moves = 0;
+        playerMoves[0] = 0;
+        playerMoves[1] = 0;
     }
 
     private void MarkDirectionUnavailbale(Directions dir, Coordinate cor)
@@ -145,7 +156,10 @@ public class Board
     {
         // If goal node
         // if no other moves from current move
-
+        if (BitCount(nodes[curCordinate.i, curCordinate.j]) == 8)
+        {
+            return true;
+        }
         return false;
     }
 
@@ -153,8 +167,11 @@ public class Board
      * makes a move towards 
      * returns if terminal state or not
      */
-    public bool MakeMove(Directions direction)
+    public bool MakeMove(uint playerId, Directions direction)
     {
+        moves++;
+        playerMoves[playerId]++;
+
         Coordinate next = GetCoordinateInDirection(curCordinate, direction);
 
         MarkDirectionUnavailbale(direction, curCordinate);
@@ -222,21 +239,21 @@ public class Board
     {
         // TODO consider perimiter
         List<Coordinate> options = new List<Coordinate>();
-        if (!IsBitSet(nodes[cor.i - 1, cor.j], 0)) // N
+        if (!IsBitSet(nodes[cor.i, cor.j], 0)) // N
             options.Add(new Coordinate(cor.i - 1, cor.j));
-        if (!IsBitSet(nodes[cor.i + 1, cor.j], 1)) // S
+        if (!IsBitSet(nodes[cor.i, cor.j], 1)) // S
             options.Add(new Coordinate(cor.i + 1, cor.j));
-        if (!IsBitSet(nodes[cor.i, cor.j + 1], 2)) // E
+        if (!IsBitSet(nodes[cor.i, cor.j], 2)) // E
             options.Add(new Coordinate(cor.i, cor.j + 1));
-        if (!IsBitSet(nodes[cor.i, cor.j - 1], 3)) // W
+        if (!IsBitSet(nodes[cor.i, cor.j], 3)) // W
             options.Add(new Coordinate(cor.i, cor.j - 1));
-        if (!IsBitSet(nodes[cor.i - 1, cor.j + 1], 4)) // NE
+        if (!IsBitSet(nodes[cor.i, cor.j], 4)) // NE
             options.Add(new Coordinate(cor.i - 1, cor.j + 1));
-        if (!IsBitSet(nodes[cor.i - 1, cor.j - 1], 5)) // NW
+        if (!IsBitSet(nodes[cor.i, cor.j], 5)) // NW
             options.Add(new Coordinate(cor.i - 1, cor.j - 1));
-        if (!IsBitSet(nodes[cor.i + 1, cor.j + 1], 6)) // SE
+        if (!IsBitSet(nodes[cor.i, cor.j], 6)) // SE
             options.Add(new Coordinate(cor.i + 1, cor.j + 1));
-        if (!IsBitSet(nodes[cor.i + 1, cor.j - 1], 7)) // SW
+        if (!IsBitSet(nodes[cor.i, cor.j], 7)) // SW
             options.Add(new Coordinate(cor.i + 1, cor.j - 1));
         return options;
     }
