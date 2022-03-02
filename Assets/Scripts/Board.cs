@@ -137,6 +137,13 @@ public class Board
         playerMoves[1] = 0;
     }
 
+    public void StaticEvaluator(uint playerId)
+    {
+        // Number of bounces you leave available for the opponent
+        // Distance from goal
+        // 
+    }
+
     private void MarkDirectionUnavailbale(Directions dir, Coordinate cor)
     {
         nodes[cor.i, cor.j] = nodes[cor.i, cor.j] | ((uint)dir);
