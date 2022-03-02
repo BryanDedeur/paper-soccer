@@ -55,8 +55,8 @@ public class Board
     private uint cols;
 
     private uint[,] nodes;
-    private Coordinate curCordinate;
-    private Coordinate prevCordinate;
+    public Coordinate curCordinate;
+    public Coordinate prevCordinate;
 
     public Board(uint _rows, uint _cols)
     {
@@ -74,6 +74,51 @@ public class Board
             for (int j = 0; j < cols; j++)
             {
                 nodes[i, j] = 0b_0000_0000;
+
+                if (i > 0 && j > 0 && i < rows - 1 && j < cols - 1)
+                {
+                    // if middle node do nothing
+                }
+                else if (i == 0 && j == 0)
+                {
+                    // Upper left corner node can only move south east
+                    nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.SE;
+                }
+                else if (i == 0 && j == cols - 1)
+                {
+                    // Upper right corner node can only move south west
+                    nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.SW;
+                }
+                else if (i == rows - 1 && j == 0)
+                {
+                    // Lower left corner node can only move north east
+                    nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.NE;
+                }
+                else if (i == rows - 1 && j == cols - 1)
+                {
+                    // Lower right corner node can only move north west
+                    nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.NW;
+                }
+                else if (i == 0)
+                {
+                    // Top Wall
+                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.SE | (uint)Directions.S | (uint)Directions.SW);
+                }
+                else if (i == rows - 1)
+                {
+                    // Lower Wall
+                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NE | (uint)Directions.N | (uint)Directions.NW);
+                }
+                else if (j == 0)
+                {
+                    // Left wall
+                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NE | (uint)Directions.E | (uint)Directions.SE);
+                }
+                else if (j == cols - 1)
+                {
+                    // Right Wall
+                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NW | (uint)Directions.W | (uint)Directions.SW);
+                }
             }
         }
 
@@ -84,6 +129,16 @@ public class Board
     private void MarkDirectionUnavailbale(Directions dir, Coordinate cor)
     {
         nodes[cor.i, cor.j] = nodes[cor.i, cor.j] | ((uint)dir);
+    }
+
+    public bool AtOpenNode()
+    {
+        return BitCount(nodes[curCordinate.i, curCordinate.j]) == 1;
+    }
+
+    public bool IsValidMove(Directions dir)
+    {
+        return !IsBitSet(nodes[curCordinate.i, curCordinate.j], dir);
     }
 
     private bool IsTerminalState(Coordinate cor)
@@ -111,30 +166,77 @@ public class Board
 
         return IsTerminalState(curCordinate);
     }
+
     bool IsBitSet(uint b, int pos)
     {
         return (b & (1 << pos)) != 0;
+    }
+
+    bool IsBitSet(uint b, Directions dir)
+    {
+        bool state = false;
+        switch (dir)
+        {
+            case Directions.N:
+                state = IsBitSet(b, 0);
+                break;
+            case Directions.S:
+                state = IsBitSet(b, 1);
+                break;
+            case Directions.E:
+                state = IsBitSet(b, 2);
+                break;
+            case Directions.W:
+                state = IsBitSet(b, 3);
+                break;
+            case Directions.NE:
+                state = IsBitSet(b, 4);
+                break;
+            case Directions.NW:
+                state = IsBitSet(b, 5);
+                break;
+            case Directions.SE:
+                state = IsBitSet(b, 6);
+                break;
+            case Directions.SW:
+                state = IsBitSet(b, 7);
+                break;
+            default:
+                break;
+        }
+        return state;
+    }
+
+    int BitCount(uint n)
+    {
+        int count = 0;
+        while (n > 0)
+        {
+            count++;
+            n = n & (n - 1);
+        }
+        return count;
     }
 
     public List<Coordinate> GetOptions(Coordinate cor)
     {
         // TODO consider perimiter
         List<Coordinate> options = new List<Coordinate>();
-        if (IsBitSet(nodes[cor.i - 1, cor.j], 0)) // N
+        if (!IsBitSet(nodes[cor.i - 1, cor.j], 0)) // N
             options.Add(new Coordinate(cor.i - 1, cor.j));
-        if (IsBitSet(nodes[cor.i + 1, cor.j], 1)) // S
+        if (!IsBitSet(nodes[cor.i + 1, cor.j], 1)) // S
             options.Add(new Coordinate(cor.i + 1, cor.j));
-        if (IsBitSet(nodes[cor.i, cor.j + 1], 2)) // E
+        if (!IsBitSet(nodes[cor.i, cor.j + 1], 2)) // E
             options.Add(new Coordinate(cor.i, cor.j + 1));
-        if (IsBitSet(nodes[cor.i, cor.j - 1], 3)) // W
+        if (!IsBitSet(nodes[cor.i, cor.j - 1], 3)) // W
             options.Add(new Coordinate(cor.i, cor.j - 1));
-        if (IsBitSet(nodes[cor.i - 1, cor.j + 1], 4)) // NE
+        if (!IsBitSet(nodes[cor.i - 1, cor.j + 1], 4)) // NE
             options.Add(new Coordinate(cor.i - 1, cor.j + 1));
-        if (IsBitSet(nodes[cor.i - 1, cor.j - 1], 5)) // NW
+        if (!IsBitSet(nodes[cor.i - 1, cor.j - 1], 5)) // NW
             options.Add(new Coordinate(cor.i - 1, cor.j - 1));
-        if (IsBitSet(nodes[cor.i + 1, cor.j + 1], 6)) // SE
+        if (!IsBitSet(nodes[cor.i + 1, cor.j + 1], 6)) // SE
             options.Add(new Coordinate(cor.i + 1, cor.j + 1));
-        if (IsBitSet(nodes[cor.i + 1, cor.j - 1], 7)) // SW
+        if (!IsBitSet(nodes[cor.i + 1, cor.j - 1], 7)) // SW
             options.Add(new Coordinate(cor.i + 1, cor.j - 1));
         return options;
     }
@@ -233,63 +335,63 @@ public class Board
         F --> North-West  (i-1, j-1)
         G --> South-East  (i+1, j+1)
         H --> South-West  (i+1, j-1)*//*
-        for (int i = 0; i < boardWidth; i++)
+        for (int i = 0; i < rows; i++)
         {
-            for (int j = 0; j < boardLength; j++)
+            for (int j = 0; j < cols; j++)
             {
-                nodesBin[i, j] = 0b_0000_0000;
+                nodes[i, j] = 0b_0000_0000;
 
-                if (i > 0 && j > 0 && i < boardWidth - 1 && j < boardLength - 1)
+                if (i > 0 && j > 0 && i < rows - 1 && j < cols - 1)
                 {
                     // Not at a boundary we can add all successors
-                    nodesBin[i, j] = nodesBin[i, j] | nodesBin[i - 1, j];
-                    nodesBin[i, j] = nodesBin[i, j] | nodesBin[i + 1, j];
-                    nodesBin[i, j] = nodesBin[i, j] | nodesBin[i, j - 1];
-                    nodesBin[i, j] = nodesBin[i, j] | nodesBin[i, j + 1];
-                    nodesBin[i, j] = nodesBin[i, j] | nodesBin[i - 1, j - 1];
-                    nodesBin[i, j] = nodesBin[i, j] | nodesBin[i + 1, j - 1];
-                    nodesBin[i, j] = nodesBin[i, j] | nodesBin[i - 1, j + 1];
-                    nodesBin[i, j] = nodesBin[i, j] | nodesBin[i + 1, j + 1];
+                    nodes[i, j] = nodes[i, j] | nodes[i - 1, j];
+                    nodes[i, j] = nodes[i, j] | nodes[i + 1, j];
+                    nodes[i, j] = nodes[i, j] | nodes[i, j - 1];
+                    nodes[i, j] = nodes[i, j] | nodes[i, j + 1];
+                    nodes[i, j] = nodes[i, j] | nodes[i - 1, j - 1];
+                    nodes[i, j] = nodes[i, j] | nodes[i + 1, j - 1];
+                    nodes[i, j] = nodes[i, j] | nodes[i - 1, j + 1];
+                    nodes[i, j] = nodes[i, j] | nodes[i + 1, j + 1];
                 }
                 else if (i == 0 && j == 0)
                 {
-                    nodesBin[i, j] = nodesBin[i + 1, j + 1];
+                    nodes[i, j] = nodes[i + 1, j + 1];
                 }
-                else if (i == 0 && j == boardLength - 1)
+                else if (i == 0 && j == cols - 1)
                 {
-                    nodesBin[i, j] = nodesBin[i + 1, j - 1];
+                    nodes[i, j] = nodes[i + 1, j - 1];
                 }
-                else if (i == boardWidth - 1 && j == 0)
+                else if (i == rows - 1 && j == 0)
                 {
-                    nodesBin[i, j] = nodesBin[i - 1, j + 1];
+                    nodes[i, j] = nodes[i - 1, j + 1];
                 }
-                else if (i == boardWidth - 1 && j == boardLength - 1)
+                else if (i == rows - 1 && j == cols - 1)
                 {
-                    nodesBin[i, j] = nodesBin[i - 1, j - 1];
+                    nodes[i, j] = nodes[i - 1, j - 1];
                 }
                 else if (i == 0)
                 {
-                    nodesBin[i, j] = nodesBin[i + 1, j];
-                    nodesBin[i, j] = nodesBin[i + 1, j - 1];
-                    nodesBin[i, j] = nodesBin[i + 1, j + 1];
+                    nodes[i, j] = nodes[i + 1, j];
+                    nodes[i, j] = nodes[i + 1, j - 1];
+                    nodes[i, j] = nodes[i + 1, j + 1];
                 }
-                else if (i == boardWidth - 1)
+                else if (i == rows - 1)
                 {
-                    nodesBin[i, j] = nodesBin[i - 1, j];
-                    nodesBin[i, j] = nodesBin[i - 1, j - 1];
-                    nodesBin[i, j] = nodesBin[i - 1, j + 1];
+                    nodes[i, j] = nodes[i - 1, j];
+                    nodes[i, j] = nodes[i - 1, j - 1];
+                    nodes[i, j] = nodes[i - 1, j + 1];
                 }
                 else if (j == 0)
                 {
-                    nodesBin[i, j] = nodesBin[i, j + 1];
-                    nodesBin[i, j] = nodesBin[i - 1, j + 1];
-                    nodesBin[i, j] = nodesBin[i + 1, j + 1];
+                    nodes[i, j] = nodes[i, j + 1];
+                    nodes[i, j] = nodes[i - 1, j + 1];
+                    nodes[i, j] = nodes[i + 1, j + 1];
                 }
-                else if (j == boardWidth - 1)
+                else if (j == rows - 1)
                 {
-                    nodesBin[i, j] = nodesBin[i, j - 1];
-                    nodesBin[i, j] = nodesBin[i - 1, j - 1];
-                    nodesBin[i, j] = nodesBin[i + 1, j - 1];
+                    nodes[i, j] = nodes[i, j - 1];
+                    nodes[i, j] = nodes[i - 1, j - 1];
+                    nodes[i, j] = nodes[i + 1, j - 1];
                 }
             }
         }
@@ -300,19 +402,19 @@ public class Board
         //nodes[0][(int)(nodes[0].Count / 2f)].options.Add(goal1Node);
         //nodes[0][(int)(nodes[0].Count / 2f) - 1].options.Add(goal1Node);
         // Add side nodes
-        nodesBin[0, (int)(boardLength / 2f) - 1] = nodesBin[0, (int)(boardLength / 2f) - 1] | nodesBin[0, (int)(boardLength / 2f)];
-        nodesBin[0, (int)(boardLength / 2f)] = nodesBin[0, (int)(boardLength / 2f)] | nodesBin[0, (int)(boardLength / 2f) + 1];
-        nodesBin[0, (int)(boardLength / 2f)] = nodesBin[0, (int)(boardLength / 2f)] | nodesBin[0, (int)(boardLength / 2f) - 1];
-        nodesBin[0, (int)(boardLength / 2f) + 1] = nodesBin[0, (int)(boardLength / 2f) + 1] | nodesBin[0, (int)(boardLength / 2f)];
+        nodes[0, (int)(cols / 2f) - 1] = nodes[0, (int)(cols / 2f) - 1] | nodes[0, (int)(cols / 2f)];
+        nodes[0, (int)(cols / 2f)] = nodes[0, (int)(cols / 2f)] | nodes[0, (int)(cols / 2f) + 1];
+        nodes[0, (int)(cols / 2f)] = nodes[0, (int)(cols / 2f)] | nodes[0, (int)(cols / 2f) - 1];
+        nodes[0, (int)(cols / 2f) + 1] = nodes[0, (int)(cols / 2f) + 1] | nodes[0, (int)(cols / 2f)];
 
         // Goal 2
         //nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) - 1].options.Add(goal2Node);
         //nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f)].options.Add(goal2Node);
         //nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) + 1].options.Add(goal2Node);
         // Add side nodes
-        nodesBin[boardWidth - 1, (int)(boardLength / 2f) - 1] = nodesBin[boardWidth - 1, (int)(boardLength / 2f) - 1] | nodesBin[boardWidth - 1, (int)(boardLength / 2f)];
-        nodesBin[boardWidth - 1, (int)(boardLength / 2f)] = nodesBin[boardWidth - 1, (int)(boardLength / 2f)] | nodesBin[boardWidth - 1, (int)(boardLength / 2f) + 1];
-        nodesBin[boardWidth - 1, (int)(boardLength / 2f)] = nodesBin[boardWidth - 1, (int)(boardLength / 2f)] | nodesBin[boardWidth - 1, (int)(boardLength / 2f) - 1];
-        nodesBin[boardWidth - 1, (int)(boardLength / 2f) + 1] = nodesBin[boardWidth - 1, (int)(boardLength / 2f) + 1] | nodesBin[boardWidth - 1, (int)(boardLength / 2f)];
+        nodes[rows - 1, (int)(cols / 2f) - 1] = nodes[rows - 1, (int)(cols / 2f) - 1] | nodes[rows - 1, (int)(cols / 2f)];
+        nodes[rows - 1, (int)(cols / 2f)] = nodes[rows - 1, (int)(cols / 2f)] | nodes[rows - 1, (int)(cols / 2f) + 1];
+        nodes[rows - 1, (int)(cols / 2f)] = nodes[rows - 1, (int)(cols / 2f)] | nodes[rows - 1, (int)(cols / 2f) - 1];
+        nodes[rows - 1, (int)(cols / 2f) + 1] = nodes[rows - 1, (int)(cols / 2f) + 1] | nodes[rows - 1, (int)(cols / 2f)];
     }*/
 }

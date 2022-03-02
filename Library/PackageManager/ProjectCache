@@ -5,27 +5,27 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 637809818813956234
-    m_Hash: 2649009015
+      ticks: 637817986664973942
+    m_Hash: 228985270
   m_LockFileStatus:
     m_FilePath: C:/Users/Bryan/Documents/Github/paper-soccer/Packages/packages-lock.json
     m_PathExists: 1
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 637809818977808892
-    m_Hash: 737861715
+      ticks: 637817986743503655
+    m_Hash: 1587512919
 m_EmbeddedPackageManifests:
   m_ManifestsStatus: {}
 m_PackageAssets:
   m_Packages:
     m_ResolvedPackages:
-    - packageId: com.unity.collab-proxy@1.11.2
+    - packageId: com.unity.collab-proxy@1.15.12
       testable: 0
       isDirectDependency: 1
-      version: 1.11.2
+      version: 1.15.12
       source: 1
-      resolvedPath: C:\Users\Bryan\Documents\Github\paper-soccer\Library\PackageCache\com.unity.collab-proxy@1.11.2
+      resolvedPath: C:\Users\Bryan\Documents\Github\paper-soccer\Library\PackageCache\com.unity.collab-proxy@1.15.12
       assetPath: Packages/com.unity.collab-proxy
       name: com.unity.collab-proxy
       displayName: Version Control
@@ -93,19 +93,6 @@ m_PackageAssets:
         - 2.1.0-preview.5
         - 2.1.0-preview.6
         compatible:
-        - 1.11.2
-        - 1.12.5
-        - 1.13.5
-        - 1.14.1
-        - 1.14.4
-        - 1.14.7
-        - 1.14.9
-        - 1.14.12
-        - 1.14.13
-        - 1.15.1
-        - 1.15.4
-        - 1.15.7
-        - 1.15.9
         - 1.15.12
         - 1.15.13
         - 2.0.0-preview.6
@@ -118,9 +105,15 @@ m_PackageAssets:
         - 2.1.0-preview.3
         - 2.1.0-preview.5
         - 2.1.0-preview.6
-        verified: 1.11.2
-      dependencies: []
-      resolvedDependencies: []
+        verified: 1.15.13
+      dependencies:
+      - name: com.unity.services.core
+        version: 1.0.1
+      resolvedDependencies:
+      - name: com.unity.services.core
+        version: 1.0.1
+      - name: com.unity.modules.unitywebrequest
+        version: 1.0.0
       keywords:
       - backup
       - cloud
@@ -147,13 +140,13 @@ m_PackageAssets:
       entitlements:
         isAllowed: 1
       isAssetStorePackage: 0
-      datePublishedTicks: 637679178630000000
+      datePublishedTicks: 637789721280000000
       documentationUrl: 
       hasRepository: 1
       repository:
         type: git
         url: https://github.cds.internal.unity3d.com/unity/com.unity.cloud.collaborate.git
-        revision: 3bc7fe2ab9acbe4538785fec6100ac17fe9e8da5
+        revision: 5ca1fd4ca9f999e087d19e98afaf99905a582771
         path: 
     - packageId: com.unity.ide.rider@2.0.7
       testable: 0
@@ -268,12 +261,12 @@ m_PackageAssets:
         url: https://github.cds.internal.unity3d.com/unity/com.unity.ide.rider.git
         revision: abb44f053e9a41d2e00e149e32a19bcec76e98b4
         path: 
-    - packageId: com.unity.ide.visualstudio@2.0.11
+    - packageId: com.unity.ide.visualstudio@2.0.14
       testable: 0
       isDirectDependency: 1
-      version: 2.0.11
+      version: 2.0.14
       source: 1
-      resolvedPath: C:\Users\Bryan\Documents\Github\paper-soccer\Library\PackageCache\com.unity.ide.visualstudio@2.0.11
+      resolvedPath: C:\Users\Bryan\Documents\Github\paper-soccer\Library\PackageCache\com.unity.ide.visualstudio@2.0.14
       assetPath: Packages/com.unity.ide.visualstudio
       name: com.unity.ide.visualstudio
       displayName: Visual Studio Editor
@@ -351,13 +344,13 @@ m_PackageAssets:
       entitlements:
         isAllowed: 1
       isAssetStorePackage: 0
-      datePublishedTicks: 637613656180000000
+      datePublishedTicks: 637782923640000000
       documentationUrl: 
-      hasRepository: 1
+      hasRepository: 0
       repository:
-        type: git
-        url: https://github.cds.internal.unity3d.com/unity/com.unity.ide.visualstudio.git
-        revision: 680e06d94ffca728223ae2cb14bb919cd354e2c1
+        type: 
+        url: 
+        revision: 
         path: 
     - packageId: com.unity.ide.vscode@1.2.4
       testable: 0
@@ -2724,7 +2717,78 @@ m_PackageAssets:
         url: https://github.cds.internal.unity3d.com/unity/com.unity.ext.nunit.git
         revision: 29ea4d6504a5f58fb3a6934db839aa80ae6d9d88
         path: 
+    - packageId: com.unity.services.core@1.0.1
+      testable: 0
+      isDirectDependency: 0
+      version: 1.0.1
+      source: 1
+      resolvedPath: C:\Users\Bryan\Documents\Github\paper-soccer\Library\PackageCache\com.unity.services.core@1.0.1
+      assetPath: Packages/com.unity.services.core
+      name: com.unity.services.core
+      displayName: Services Core
+      author:
+        name: 
+        email: 
+        url: 
+      category: 
+      type: 
+      description: 'This package defines common components used by multiple Game
+        Service packages.
+
+        These are standardized and aim to unify the overall
+        experience of working with Game Services packages.'
+      status: 4
+      errors: []
+      versions:
+        all:
+        - 1.0.1
+        - 1.1.0-pre.7
+        - 1.1.0-pre.8
+        - 1.1.0-pre.9
+        - 1.1.0-pre.10
+        - 1.1.0-pre.11
+        - 1.1.0-pre.41
+        - 1.1.0-pre.69
+        - 1.2.0
+        compatible:
+        - 1.0.1
+        - 1.1.0-pre.7
+        - 1.1.0-pre.8
+        - 1.1.0-pre.9
+        - 1.1.0-pre.10
+        - 1.1.0-pre.11
+        - 1.1.0-pre.41
+        - 1.1.0-pre.69
+        - 1.2.0
+        verified: 1.0.1
+      dependencies:
+      - name: com.unity.modules.unitywebrequest
+        version: 1.0.0
+      resolvedDependencies:
+      - name: com.unity.modules.unitywebrequest
+        version: 1.0.0
+      keywords: []
+      registry:
+        id: main
+        name: 
+        url: https://packages.unity.com
+        scopes: []
+        isDefault: 1
+        capabilities: 7
+      hasRegistry: 1
+      hideInEditor: 1
+      entitlements:
+        isAllowed: 1
+      isAssetStorePackage: 0
+      datePublishedTicks: 637604883250000000
+      documentationUrl: 
+      hasRepository: 1
+      repository:
+        type: git
+        url: https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git
+        revision: 4cd880d4fd5c60597629249bf4f324e4c8d7aa2e
+        path: 
   m_LocalPackages:
     m_LocalFileStatus: []
 m_ProjectPath: C:/Users/Bryan/Documents/Github/paper-soccer/Packages
-m_EditorVersion: 2020.3.20f1 (41c4e627c95f)
+m_EditorVersion: 2020.3.30f1 (1fb1bf06830e)

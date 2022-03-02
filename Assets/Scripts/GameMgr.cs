@@ -17,22 +17,12 @@ public class GameMgr : MonoBehaviour
 
     private GameObject nodeContainer;
 
+    private Board board;
+
     private const int boardWidth = 9;
     private const int boardLength = 11;
 
     private Node[,] nodes;
-    private uint[,] nodesBin;
-
-    // binary node uint node = 0b_0000_0000 NSEWABCD
-
-    const uint N = 0b_0000_0001;
-    const uint S = 0b_0000_0010;
-    const uint E = 0b_0000_0100;
-    const uint W = 0b_0000_1000;
-    const uint A = 0b_0001_0000;
-    const uint B = 0b_0010_0000;
-    const uint C = 0b_0100_0000;
-    const uint D = 0b_1000_0000;
 
     private Node goal1Node;
     private Node goal2Node;
@@ -49,18 +39,34 @@ public class GameMgr : MonoBehaviour
             Destroy(this);
         }
 
-        nodesBin = new uint[boardWidth, boardLength];
+        board = new Board(boardWidth, boardLength);
+        CreateNodes(boardWidth, boardLength);
+        RandomizePlayer();
+
+/*        nodesBin = new uint[boardWidth, boardLength];
         print(BitCount(N));
 
         // Board creation stuff
-        CreateNodes(boardWidth,boardLength);
-        ResetAllNodeOptions();
+        ResetAllNodeOptions();*/
     }
 
     private void Start()
     {
-        ResetBoard();
-        StartRound();
+        Move(Directions.N);
+
+    }
+
+    private void RandomizePlayer()
+    {
+        int startPlayer = Random.Range(0, 2);
+        if (startPlayer == 0)
+        {
+            activePlayer = player1;
+        }
+        else
+        {
+            activePlayer = player2;
+        }
     }
 
     private Node CreateNode(Vector3 pos)
@@ -95,75 +101,22 @@ public class GameMgr : MonoBehaviour
         goal1Node = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (-1 * spacing)));
         goal2Node = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (dimZ * spacing)));
     }
-    int BitCount(uint n)
+
+    public void Move(Directions direction)
     {
-        int count = 0;
-        while(n > 0) {
-            count++;
-            n = n & (n - 1);
-        }
-        return count;
-    }
-
-    public void MoveToNode(int i, int j)
-    {
-        Vector2Int currentPos = moves[moves.Count - 1];
-
-        // Find the direction
-        if (i == currentPos.x && j > currentPos.y)
+        if (board.IsValidMove(direction))
         {
-
-        } else if (i == currentPos.x && j < currentPos.y)
-        {
-
-        }
-        else if (i == currentPos.x && j > currentPos.y)
-        {
-
-        }
-        else if ()
-        {
-
-        }
-        else if ()
-        {
-
-        }
-        nodesBin[currentPos.x, currentPos.y] = nodesBin[currentPos.x, currentPos.y] | 
-
-
-        moves.Add(new Vector2Int(i, j));
-
-/*
-        Node nextNode = nodes[i,j];
-
-        // If we are not on the first move, modify the current node
-        if (moves.Count > 0)
-        {
-            //ballNode.options.Remove(node);
-
-            //Vector2 ballNode = moves[moves.Count - 1];
-            //nodesBin[ballNode.x, ballNode.y] = 
-
-            //LineMgr.instance.CreateLine(node.transform.position, ballNode.transform.position, activePlayer.material);
-            // Hide the options
-            while (InteractableMgr.instance.active.Count > 0)
+            board.MakeMove(direction);
+            LineMgr.instance.CreateLine(
+                nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
+                nodes[board.curCordinate.i, board.curCordinate.j].transform.position,
+                activePlayer.material);
+            ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
+            if (board.AtOpenNode())
             {
-                InteractableMgr.instance.active[0].SetState(false);
+                SwitchPlayers();
             }
         }
-
-        // If the new node does not have any bounce options then we swap players
-        if (BitCount(nodesBin[i,j]) == 8)
-        {
-            SwitchPlayers();
-        }
-
-        //node.options.Remove(ballNode);
-        //ballNode = node;
-        ball.transform.position = nextNode.transform.position;
-        HighlightMgr.instance.DeselectAll();
-        ShowOptions();*/
     }
 
     private void SwitchPlayers()
@@ -181,25 +134,15 @@ public class GameMgr : MonoBehaviour
     private void ResetBoard()
     {
         // Resets all the data necessary to restart a new round
-        ResetAllNodeOptions();
+        //ResetAllNodeOptions();
 
         // Moves the ball to the center
-        int i = (int)(boardWidth / 2);
+/*        int i = (int)(boardWidth / 2);
         int j = (int)(boardLength / 2);
-        MoveToNode(i,j);
+        MoveToNode(i,j);*/
     }
 
-    private void StartRound()
-    {
-        int startPlayer = Random.Range(0, 2);
-        if (startPlayer == 0)
-        {
-            activePlayer = player1;
-        } else
-        {
-            activePlayer = player2;
-        }
-    }
+
 
     private void ShowOptions()
     {
@@ -212,6 +155,37 @@ public class GameMgr : MonoBehaviour
 
     private void Update()
     {
-        
+        if (Input.GetKeyDown(KeyCode.Keypad8))
+        {
+            Move(Directions.N);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad2))
+        {
+            Move(Directions.S);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad6))
+        {
+            Move(Directions.E);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad4))
+        {
+            Move(Directions.W);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad7))
+        {
+            Move(Directions.NW);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad9))
+        {
+            Move(Directions.NE);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad1))
+        {
+            Move(Directions.SW);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad3))
+        {
+            Move(Directions.SE);
+        }
     }
 }
