@@ -96,9 +96,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 280f880ca3373054985c705e5cdf1431, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  options: []
   selector: {fileID: 0}
   highlight: {fileID: 0}
+  interactable: {fileID: 0}
 --- !u!114 &3579575263677675427
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -123,6 +123,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 301e950b9f998a94ca928c70dcafb2dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  active: 0
   OnIndicatorChange:
     m_PersistentCalls:
       m_Calls: []

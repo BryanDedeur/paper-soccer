@@ -30,8 +30,7 @@ public class GameMgr : MonoBehaviour
 
     private Node[,] nodes;
 
-    private Node goal1Node;
-    private Node goal2Node;
+    private Node[] goalNodes;
 
     private static int nodeCount;
 
@@ -44,11 +43,12 @@ public class GameMgr : MonoBehaviour
         {
             Destroy(this);
         }
-
+        goalNodes = new Node[2];
         board = new Board(boardWidth, boardLength);
         CreateNodes(boardWidth, boardLength);
         RandomizePlayer();
         ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
+        ShowOptions();
 
 /*        nodesBin = new uint[boardWidth, boardLength];
         print(BitCount(N));
@@ -104,8 +104,8 @@ public class GameMgr : MonoBehaviour
         }
 
         // Creates extra nodes for the goals
-        goal1Node = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (-1 * spacing)));
-        goal2Node = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (dimZ * spacing)));
+        goalNodes[1] = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (dimZ * spacing)));
+        goalNodes[0] = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (-1 * spacing)));
     }
 
     public void Move(Directions direction)
@@ -115,25 +115,38 @@ public class GameMgr : MonoBehaviour
             if (board.IsValidMove(direction))
             {
                 HideOptions();
-                bool gameOverReached = board.MakeMove(activePlayer.id, direction);
-                LineMgr.instance.CreateLine(
+                int gameOverReached = board.MakeMove(activePlayer.id, direction);
+                if (gameOverReached == -1)
+                {
+                    LineMgr.instance.CreateLine(
                     nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
                     nodes[board.curCordinate.i, board.curCordinate.j].transform.position,
                     activePlayer.material);
-                ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
-
-                if (gameOverReached)
-                {
-                    GameOver.Invoke();
-                } else
-                {
+                    ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
                     if (board.AtOpenNode())
                     {
                         SwitchPlayers();
                     }
                     ShowOptions();
                 }
-
+                else if (gameOverReached == 3)
+                {
+                    LineMgr.instance.CreateLine(
+                    nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
+                    nodes[board.curCordinate.i, board.curCordinate.j].transform.position,
+                    activePlayer.material);
+                    ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
+                }
+                else
+                {
+                    print(gameOverReached);
+                    GameOver.Invoke();
+                    LineMgr.instance.CreateLine(
+                    nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
+                    goalNodes[gameOverReached].transform.position,
+                    activePlayer.material);
+                    ball.transform.position = goalNodes[gameOverReached].transform.position;
+                }
             }
         }
 
@@ -165,25 +178,23 @@ public class GameMgr : MonoBehaviour
 
     private void HideOptions()
     {
-        foreach (Coordinate cord in board.GetOptions(board.curCordinate))
+        foreach (KeyValuePair<Directions, Coordinate> cord in board.GetOptions(board.curCordinate))
         {
-            nodes[cord.i, cord.j].highlight.SetState(false);
-            nodes[cord.i, cord.j].interactable.SetState(false);
+            //nodes[cord.Value.i, cord.Value.j].highlight.SetState(false);
+            //nodes[cord.Value.i, cord.Value.j].interactable.SetState(false);
         }
+        DirectionIndicator.instance.HideAll();
     }
 
     private void ShowOptions()
     {
-        foreach (Coordinate cord in board.GetOptions(board.curCordinate))
+        foreach (KeyValuePair<Directions, Coordinate> cord in board.GetOptions(board.curCordinate))
         {
-            nodes[cord.i, cord.j].highlight.SetState(true);
-            nodes[cord.i, cord.j].interactable.SetState(true);
+            //nodes[cord.Value.i, cord.Value.j].highlight.SetState(true);
+            //nodes[cord.Value.i, cord.Value.j].interactable.SetState(true);
+            DirectionIndicator.instance.ShowDirection(cord.Key);
         }
-        /*        foreach (Node neighbor in ballNode.options)
-                {
-                    neighbor.highlight.SetState(true);
-                    neighbor.interactable.SetState(true);
-                }*/
+        DirectionIndicator.instance.transform.position = ball.transform.position;
     }
 
     private void Update()

@@ -4,14 +4,14 @@ using UnityEngine;
 
 public struct Coordinate
 {
-    public Coordinate(uint _i, uint _j)
+    public Coordinate(int _i, int _j)
     {
         i = _i;
         j = _j;
     }
 
-    public uint i;
-    public uint j;
+    public int i;
+    public int j;
 }
 
 public enum Directions
@@ -59,8 +59,8 @@ public class Board
     public Coordinate prevCordinate;
 
     // stats
-    public uint moves = 0;
-    public uint[] playerMoves;
+    public uint[] moves;
+    public uint[] bounces;
 
     public bool gameOver = false;
 
@@ -69,7 +69,8 @@ public class Board
         nodes = new uint[_rows, _cols];
         rows = _rows;
         cols = _cols;
-        playerMoves = new uint[2];
+        moves = new uint[2];
+        bounces = new uint[2];
         Reset();
     }
 
@@ -132,16 +133,33 @@ public class Board
         // Set the starting position
         curCordinate = new Coordinate((byte)(rows * 0.5f), (byte)(cols * 0.5f));
         gameOver = false;
-        moves = 0;
-        playerMoves[0] = 0;
-        playerMoves[1] = 0;
+        moves[0] = 0;
+        moves[1] = 0;
+
+        // Add left side node directions
+        nodes[(int)(rows / 2f) - 1, 0] = nodes[(int)(rows / 2f) - 1, 0] ^ (uint) Directions.S;
+        nodes[(int)(rows / 2f) - 1, 0] = nodes[(int)(rows / 2f) - 1, 0] ^ (uint) Directions.SW;
+        nodes[(int)(rows / 2f), 0] = nodes[(int)(rows / 2f), 0] ^ (uint) Directions.N;
+        nodes[(int)(rows / 2f), 0] = nodes[(int)(rows / 2f), 0] ^ (uint) Directions.S;
+        nodes[(int)(rows / 2f), 0] = nodes[(int)(rows / 2f), 0] ^ (uint) Directions.W;
+        nodes[(int)(rows / 2f) + 1, 0] = nodes[(int)(rows / 2f) + 1, 0] ^ (uint) Directions.N;
+        nodes[(int)(rows / 2f) + 1, 0] = nodes[(int)(rows / 2f) + 1, 0] ^ (uint)Directions.NW;
+
+        // Add right side node directions
+        nodes[(int)(rows / 2f) - 1, cols - 1] = nodes[(int)(rows / 2f) - 1, cols - 1] ^ (uint)Directions.S;
+        nodes[(int)(rows / 2f) - 1, cols - 1] = nodes[(int)(rows / 2f) - 1, cols - 1] ^ (uint)Directions.SE;
+        nodes[(int)(rows / 2f), cols - 1] = nodes[(int)(rows / 2f), cols - 1] ^ (uint)Directions.N;
+        nodes[(int)(rows / 2f), cols - 1] = nodes[(int)(rows / 2f), cols - 1] ^ (uint)Directions.S;
+        nodes[(int)(rows / 2f), cols - 1] = nodes[(int)(rows / 2f), cols - 1] ^ (uint)Directions.E;
+        nodes[(int)(rows / 2f) + 1, cols - 1] = nodes[(int)(rows / 2f) + 1, cols - 1] ^ (uint)Directions.N;
+        nodes[(int)(rows / 2f) + 1, cols - 1] = nodes[(int)(rows / 2f) + 1, cols - 1] ^ (uint)Directions.NE;
     }
 
     public void StaticEvaluator(uint playerId)
     {
-        // Number of bounces you leave available for the opponent
+        // Number of bounces you left available for the opponent
         // Distance from goal
-        // 
+        // Number of current bounces
     }
 
     private void MarkDirectionUnavailbale(Directions dir, Coordinate cor)
@@ -159,30 +177,42 @@ public class Board
         return !IsBitSet(nodes[curCordinate.i, curCordinate.j], dir);
     }
 
-    private bool IsTerminalState(Coordinate cor)
+    private int IsTerminalState(Coordinate cor)
     {
         // If goal node
+        if (cor.j < 0)
+        {
+            gameOver = true;
+            return 0;
+        }
+        if (cor.j >= cols)
+        {
+            gameOver = true;
+            return 1;
+        }
         // if no other moves from current move
         if (BitCount(nodes[curCordinate.i, curCordinate.j]) == 8)
         {
-            return true;
+            gameOver = true;
+            return 3;
         }
-        return false;
+        return -1;
     }
 
     /*
      * makes a move towards 
      * returns if terminal state or not
      */
-    public bool MakeMove(uint playerId, Directions direction)
+    public int MakeMove(uint playerId, Directions direction)
     {
-        moves++;
-        playerMoves[playerId]++;
+        moves[playerId]++;
 
         Coordinate next = GetCoordinateInDirection(curCordinate, direction);
-
-        MarkDirectionUnavailbale(direction, curCordinate);
-        MarkDirectionUnavailbale(GetOppositeDirection(direction), next);
+        if (!(next.j < 0 || next.j >= cols))
+        {
+            MarkDirectionUnavailbale(direction, curCordinate);
+            MarkDirectionUnavailbale(GetOppositeDirection(direction), next);
+        }
 
         Coordinate temp = curCordinate;
         curCordinate = next;
@@ -242,26 +272,26 @@ public class Board
         return count;
     }
 
-    public List<Coordinate> GetOptions(Coordinate cor)
+    public Dictionary<Directions, Coordinate> GetOptions(Coordinate cor)
     {
         // TODO consider perimiter
-        List<Coordinate> options = new List<Coordinate>();
+        Dictionary<Directions, Coordinate> options = new Dictionary<Directions, Coordinate>();
         if (!IsBitSet(nodes[cor.i, cor.j], 0)) // N
-            options.Add(new Coordinate(cor.i - 1, cor.j));
+            options.Add(Directions.N, new Coordinate(cor.i - 1, cor.j));
         if (!IsBitSet(nodes[cor.i, cor.j], 1)) // S
-            options.Add(new Coordinate(cor.i + 1, cor.j));
+            options.Add(Directions.S, new Coordinate(cor.i + 1, cor.j));
         if (!IsBitSet(nodes[cor.i, cor.j], 2)) // E
-            options.Add(new Coordinate(cor.i, cor.j + 1));
+            options.Add(Directions.E, new Coordinate(cor.i, cor.j + 1));
         if (!IsBitSet(nodes[cor.i, cor.j], 3)) // W
-            options.Add(new Coordinate(cor.i, cor.j - 1));
+            options.Add(Directions.W, new Coordinate(cor.i, cor.j - 1));
         if (!IsBitSet(nodes[cor.i, cor.j], 4)) // NE
-            options.Add(new Coordinate(cor.i - 1, cor.j + 1));
+            options.Add(Directions.NE, new Coordinate(cor.i - 1, cor.j + 1));
         if (!IsBitSet(nodes[cor.i, cor.j], 5)) // NW
-            options.Add(new Coordinate(cor.i - 1, cor.j - 1));
+            options.Add(Directions.NW, new Coordinate(cor.i - 1, cor.j - 1));
         if (!IsBitSet(nodes[cor.i, cor.j], 6)) // SE
-            options.Add(new Coordinate(cor.i + 1, cor.j + 1));
+            options.Add(Directions.SE, new Coordinate(cor.i + 1, cor.j + 1));
         if (!IsBitSet(nodes[cor.i, cor.j], 7)) // SW
-            options.Add(new Coordinate(cor.i + 1, cor.j - 1));
+            options.Add(Directions.SW, new Coordinate(cor.i + 1, cor.j - 1));
         return options;
     }
 
