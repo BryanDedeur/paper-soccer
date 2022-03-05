@@ -8,9 +8,7 @@ public class GameMgr : MonoBehaviour
     public static GameMgr instance;
 
     public GameObject nodePrefab;
-    public Player player1;
-    public Player player2;
-    public Player activePlayer;
+    public List<Player> players;
 
     public GameObject ball;
 
@@ -33,6 +31,7 @@ public class GameMgr : MonoBehaviour
     private Node[] goalNodes;
 
     private static int nodeCount;
+    private MinMax minMax;
 
     private void Awake()
     {
@@ -43,18 +42,14 @@ public class GameMgr : MonoBehaviour
         {
             Destroy(this);
         }
+        minMax = new MinMax();
+
         goalNodes = new Node[2];
         board = new Board(boardWidth, boardLength);
         CreateNodes(boardWidth, boardLength);
         RandomizePlayer();
         ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
         ShowOptions();
-
-/*        nodesBin = new uint[boardWidth, boardLength];
-        print(BitCount(N));
-
-        // Board creation stuff
-        ResetAllNodeOptions();*/
     }
 
     private void Start()
@@ -64,15 +59,8 @@ public class GameMgr : MonoBehaviour
 
     private void RandomizePlayer()
     {
-        int startPlayer = Random.Range(0, 2);
-        if (startPlayer == 0)
-        {
-            activePlayer = player1;
-        }
-        else
-        {
-            activePlayer = player2;
-        }
+        uint startPlayer = (uint) Random.Range(0, 2);
+        board.activePlayer = startPlayer;
     }
 
     private Node CreateNode(Vector3 pos)
@@ -115,54 +103,55 @@ public class GameMgr : MonoBehaviour
             if (board.IsValidMove(direction))
             {
                 HideOptions();
-                int gameOverReached = board.MakeMove(activePlayer.id, direction);
+                Player player = players[(int) board.activePlayer];
+                int gameOverReached = board.MakeMove(direction);
+                player.IncrementMoveCounter();
+
+                Vector3 startPos = nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position;
+                Material prevPlayer = player.material;
                 if (gameOverReached == -1)
                 {
-                    LineMgr.instance.CreateLine(
-                    nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
-                    nodes[board.curCordinate.i, board.curCordinate.j].transform.position,
-                    activePlayer.material);
-                    ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
-                    if (board.AtOpenNode())
-                    {
-                        SwitchPlayers();
+                    // If player makes a move and game is continuing
+                    Vector3 endPos = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
+                    LineMgr.instance.CreateLine(startPos, endPos, prevPlayer);
+                    ball.transform.position = endPos;
+                    if (!board.AtOpenNode()) {
+                        // Player bounced the ball their turn continues
+                        player.IncrementBounceCounter();
                     }
                     ShowOptions();
                 }
-                else if (gameOverReached == 3)
+                else if (gameOverReached == 2)
                 {
-                    LineMgr.instance.CreateLine(
-                    nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
-                    nodes[board.curCordinate.i, board.curCordinate.j].transform.position,
-                    activePlayer.material);
-                    ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
+                    // No winner but game is over
+                    Vector3 endPos = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
+                    LineMgr.instance.CreateLine(startPos, endPos, prevPlayer);
+                    ball.transform.position = endPos;
+                    player.placing = false;
                 }
                 else
                 {
                     print(gameOverReached);
+                    players[gameOverReached].IncrementWinCounter();
+                    Vector3 endPos = goalNodes[gameOverReached].transform.position;
+                    LineMgr.instance.CreateLine(startPos, endPos, prevPlayer);
+                    ball.transform.position = endPos;
                     GameOver.Invoke();
-                    LineMgr.instance.CreateLine(
-                    nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position,
-                    goalNodes[gameOverReached].transform.position,
-                    activePlayer.material);
-                    ball.transform.position = goalNodes[gameOverReached].transform.position;
+                }
+
+                // Evaluate the board
+                players[0].EvaluationUpdate(board.StaticEvaluator(players[0].id));
+                players[1].EvaluationUpdate(board.StaticEvaluator(players[1].id));
+
+                if (player.id != board.activePlayer)
+                {
+                    player.placing = false;
+                    PlayersChanged.Invoke();
+                    players[(int) board.activePlayer].placing = true;
                 }
             }
         }
 
-    }
-
-    private void SwitchPlayers()
-    {
-        if (activePlayer == player2)
-        {
-            activePlayer = player1;
-        }
-        else
-        {
-            activePlayer = player2;
-        }
-        PlayersChanged.Invoke();
     }
 
     private void ResetBoard()
@@ -230,6 +219,12 @@ public class GameMgr : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Keypad3))
         {
             Move(Directions.SE);
+        }
+        if(players[(int) board.activePlayer].isAI)
+        {
+            (float, Directions) action = minMax.Solve(board, 3, board.activePlayer);
+            print(action);
+            Move(action.Item2);
         }
     }
 }

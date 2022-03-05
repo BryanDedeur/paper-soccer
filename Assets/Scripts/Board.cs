@@ -60,9 +60,12 @@ public class Board
 
     // stats
     public uint[] moves;
-    public uint[] bounces;
 
+    public uint activePlayer;
     public bool gameOver = false;
+    public int winner = -1;
+
+    public Board() {}
 
     public Board(uint _rows, uint _cols)
     {
@@ -70,8 +73,33 @@ public class Board
         rows = _rows;
         cols = _cols;
         moves = new uint[2];
-        bounces = new uint[2];
         Reset();
+    }
+
+    public Board FastDeepCopy()
+    {
+        Board newBoard = new Board();
+        newBoard.nodes = new uint[this.rows, this.cols];
+        newBoard.rows = this.rows;
+        newBoard.cols = this.cols;
+        newBoard.moves = new uint[2];
+        newBoard.moves[0] = this.moves[0];
+        newBoard.moves[1] = this.moves[1];
+        newBoard.gameOver = this.gameOver;
+        newBoard.curCordinate = new Coordinate(this.curCordinate.i, this.curCordinate.j);
+        newBoard.prevCordinate = new Coordinate(this.prevCordinate.i, this.prevCordinate.j);
+        newBoard.winner = this.winner;
+        newBoard.activePlayer = this.activePlayer;
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                newBoard.nodes[i, j] = this.nodes[i, j];
+            }
+        }
+
+        return newBoard;
     }
 
     public void Reset()
@@ -155,11 +183,23 @@ public class Board
         nodes[(int)(rows / 2f) + 1, cols - 1] = nodes[(int)(rows / 2f) + 1, cols - 1] ^ (uint)Directions.NE;
     }
 
-    public void StaticEvaluator(uint playerId)
+    public float StaticEvaluator(uint playerId)
     {
-        // Number of bounces you left available for the opponent
-        // Distance from goal
+        float score = 0;
+        // Number of bounces nodes available
+        // Distance from nearest victory nodes
+        // Distance from opposite goal
+        if (playerId == 1)
+        {
+            score += (new Vector2(curCordinate.i, curCordinate.j) - new Vector2((int)(rows / 2f), 0)).magnitude;
+        }
+        else
+        {
+            score += (new Vector2(curCordinate.i, curCordinate.j) - new Vector2((int)(rows / 2f), cols - 1)).magnitude;
+        }
         // Number of current bounces
+        score += moves[playerId];
+        return score;
     }
 
     private void MarkDirectionUnavailbale(Directions dir, Coordinate cor)
@@ -183,18 +223,21 @@ public class Board
         if (cor.j < 0)
         {
             gameOver = true;
+            winner = 0;
             return 0;
         }
         if (cor.j >= cols)
         {
             gameOver = true;
+            winner = 1;
             return 1;
         }
         // if no other moves from current move
         if (BitCount(nodes[curCordinate.i, curCordinate.j]) == 8)
         {
             gameOver = true;
-            return 3;
+            winner = 2;
+            return 2;
         }
         return -1;
     }
@@ -203,9 +246,9 @@ public class Board
      * makes a move towards 
      * returns if terminal state or not
      */
-    public int MakeMove(uint playerId, Directions direction)
+    public int MakeMove(Directions direction)
     {
-        moves[playerId]++;
+        moves[activePlayer]++;
 
         Coordinate next = GetCoordinateInDirection(curCordinate, direction);
         if (!(next.j < 0 || next.j >= cols))
@@ -218,7 +261,29 @@ public class Board
         curCordinate = next;
         prevCordinate = temp;
 
-        return IsTerminalState(curCordinate);
+        int state = IsTerminalState(curCordinate);
+
+        if (state == -1)
+        {
+            if (AtOpenNode())
+            {
+                SwitchPlayers();
+            }
+        }
+
+        return state;
+    }
+
+    public void SwitchPlayers()
+    {
+        if (activePlayer == 0)
+        {
+            activePlayer = 1;
+        }
+        else
+        {
+            activePlayer = 0;
+        }
     }
 
     bool IsBitSet(uint b, int pos)
@@ -366,109 +431,4 @@ public class Board
 
         return opposite;
     }
-/*
-
-    private void ResetAllNodeOptions()
-    {
-        *//*
-        This will update every nodes list of neighbors for quick access later. 
-
-            N.W   N   N.E
-              \   |   /
-               \  |  /
-            W----Node----E
-                / | \
-              /   |  \
-            S.W   S   S.E
-
-        A --> North       (i-1, j)
-        B --> South       (i+1, j)
-        C --> East        (i, j+1)
-        D --> West        (i, j-1)
-        E --> North-East  (i-1, j+1)
-        F --> North-West  (i-1, j-1)
-        G --> South-East  (i+1, j+1)
-        H --> South-West  (i+1, j-1)*//*
-        for (int i = 0; i < rows; i++)
-        {
-            for (int j = 0; j < cols; j++)
-            {
-                nodes[i, j] = 0b_0000_0000;
-
-                if (i > 0 && j > 0 && i < rows - 1 && j < cols - 1)
-                {
-                    // Not at a boundary we can add all successors
-                    nodes[i, j] = nodes[i, j] | nodes[i - 1, j];
-                    nodes[i, j] = nodes[i, j] | nodes[i + 1, j];
-                    nodes[i, j] = nodes[i, j] | nodes[i, j - 1];
-                    nodes[i, j] = nodes[i, j] | nodes[i, j + 1];
-                    nodes[i, j] = nodes[i, j] | nodes[i - 1, j - 1];
-                    nodes[i, j] = nodes[i, j] | nodes[i + 1, j - 1];
-                    nodes[i, j] = nodes[i, j] | nodes[i - 1, j + 1];
-                    nodes[i, j] = nodes[i, j] | nodes[i + 1, j + 1];
-                }
-                else if (i == 0 && j == 0)
-                {
-                    nodes[i, j] = nodes[i + 1, j + 1];
-                }
-                else if (i == 0 && j == cols - 1)
-                {
-                    nodes[i, j] = nodes[i + 1, j - 1];
-                }
-                else if (i == rows - 1 && j == 0)
-                {
-                    nodes[i, j] = nodes[i - 1, j + 1];
-                }
-                else if (i == rows - 1 && j == cols - 1)
-                {
-                    nodes[i, j] = nodes[i - 1, j - 1];
-                }
-                else if (i == 0)
-                {
-                    nodes[i, j] = nodes[i + 1, j];
-                    nodes[i, j] = nodes[i + 1, j - 1];
-                    nodes[i, j] = nodes[i + 1, j + 1];
-                }
-                else if (i == rows - 1)
-                {
-                    nodes[i, j] = nodes[i - 1, j];
-                    nodes[i, j] = nodes[i - 1, j - 1];
-                    nodes[i, j] = nodes[i - 1, j + 1];
-                }
-                else if (j == 0)
-                {
-                    nodes[i, j] = nodes[i, j + 1];
-                    nodes[i, j] = nodes[i - 1, j + 1];
-                    nodes[i, j] = nodes[i + 1, j + 1];
-                }
-                else if (j == rows - 1)
-                {
-                    nodes[i, j] = nodes[i, j - 1];
-                    nodes[i, j] = nodes[i - 1, j - 1];
-                    nodes[i, j] = nodes[i + 1, j - 1];
-                }
-            }
-        }
-
-        // Add special options around goals
-        // Goal 1
-        //nodes[0][(int)(nodes[0].Count / 2f) + 1].options.Add(goal1Node);
-        //nodes[0][(int)(nodes[0].Count / 2f)].options.Add(goal1Node);
-        //nodes[0][(int)(nodes[0].Count / 2f) - 1].options.Add(goal1Node);
-        // Add side nodes
-        nodes[0, (int)(cols / 2f) - 1] = nodes[0, (int)(cols / 2f) - 1] | nodes[0, (int)(cols / 2f)];
-        nodes[0, (int)(cols / 2f)] = nodes[0, (int)(cols / 2f)] | nodes[0, (int)(cols / 2f) + 1];
-        nodes[0, (int)(cols / 2f)] = nodes[0, (int)(cols / 2f)] | nodes[0, (int)(cols / 2f) - 1];
-        nodes[0, (int)(cols / 2f) + 1] = nodes[0, (int)(cols / 2f) + 1] | nodes[0, (int)(cols / 2f)];
-
-        // Goal 2
-        //nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) - 1].options.Add(goal2Node);
-        //nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f)].options.Add(goal2Node);
-        //nodes[nodes.Count - 1][(int)(nodes[0].Count / 2f) + 1].options.Add(goal2Node);
-        // Add side nodes
-        nodes[rows - 1, (int)(cols / 2f) - 1] = nodes[rows - 1, (int)(cols / 2f) - 1] | nodes[rows - 1, (int)(cols / 2f)];
-        nodes[rows - 1, (int)(cols / 2f)] = nodes[rows - 1, (int)(cols / 2f)] | nodes[rows - 1, (int)(cols / 2f) + 1];
-        nodes[rows - 1, (int)(cols / 2f)] = nodes[rows - 1, (int)(cols / 2f)] | nodes[rows - 1, (int)(cols / 2f) - 1];
-        nodes[rows - 1, (int)(cols / 2f) + 1] = nodes[rows - 1, (int)(cols / 2f) + 1] | nodes[rows - 1, (int)(cols / 2f)];
-    }*/
 }
