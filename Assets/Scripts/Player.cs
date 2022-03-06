@@ -76,7 +76,7 @@ public class Player : MonoBehaviour
     private void ColorChange()
     {
         material.color = color;
-        material.SetColor("_EmissionColor", Color.gray);
+        material.SetColor("_EmissionColor", color);
         OnColorChange.Invoke(color);
     }
 

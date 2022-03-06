@@ -62,6 +62,7 @@ public class Board
     public uint[] moves;
 
     public uint activePlayer;
+    public uint nonActivePlayer;
     public bool gameOver = false;
     public int winner = -1;
 
@@ -90,6 +91,7 @@ public class Board
         newBoard.prevCordinate = new Coordinate(this.prevCordinate.i, this.prevCordinate.j);
         newBoard.winner = this.winner;
         newBoard.activePlayer = this.activePlayer;
+        newBoard.nonActivePlayer = this.nonActivePlayer;
 
         for (int i = 0; i < rows; i++)
         {
@@ -111,29 +113,32 @@ public class Board
             {
                 nodes[i, j] = 0b_0000_0000;
 
-                if (i > 0 && j > 0 && i < rows - 1 && j < cols - 1)
+                if (i > 0 && j > 1 && i < rows - 1 && j < cols - 2)
                 {
                     // if middle node do nothing
                 }
-                else if (i == 0 && j == 0)
+                else if (i == 0 && j == 1)
                 {
                     // Upper left corner node can only move south east
                     nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.SE;
                 }
-                else if (i == 0 && j == cols - 1)
+                else if (i == 0 && j == cols - 2)
                 {
                     // Upper right corner node can only move south west
                     nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.SW;
                 }
-                else if (i == rows - 1 && j == 0)
+                else if (i == rows - 1 && j == 1)
                 {
                     // Lower left corner node can only move north east
                     nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.NE;
                 }
-                else if (i == rows - 1 && j == cols - 1)
+                else if (i == rows - 1 && j == cols - 2)
                 {
                     // Lower right corner node can only move north west
                     nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.NW;
+                } else if (j == 0 || j == cols - 1)
+                {
+                    nodes[i, j] = 0b_1111_1111;
                 }
                 else if (i == 0)
                 {
@@ -145,16 +150,18 @@ public class Board
                     // Lower Wall
                     nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NE | (uint)Directions.N | (uint)Directions.NW);
                 }
-                else if (j == 0)
+                else if (j == 1)
                 {
                     // Left wall
                     nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NE | (uint)Directions.E | (uint)Directions.SE);
                 }
-                else if (j == cols - 1)
+                else if (j == cols - 2)
                 {
                     // Right Wall
                     nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NW | (uint)Directions.W | (uint)Directions.SW);
-                }
+                } 
+                
+
             }
         }
 
@@ -165,27 +172,49 @@ public class Board
         moves[1] = 0;
 
         // Add left side node directions
-        nodes[(int)(rows / 2f) - 1, 0] = nodes[(int)(rows / 2f) - 1, 0] ^ (uint) Directions.S;
-        nodes[(int)(rows / 2f) - 1, 0] = nodes[(int)(rows / 2f) - 1, 0] ^ (uint) Directions.SW;
-        nodes[(int)(rows / 2f), 0] = nodes[(int)(rows / 2f), 0] ^ (uint) Directions.N;
-        nodes[(int)(rows / 2f), 0] = nodes[(int)(rows / 2f), 0] ^ (uint) Directions.S;
-        nodes[(int)(rows / 2f), 0] = nodes[(int)(rows / 2f), 0] ^ (uint) Directions.W;
-        nodes[(int)(rows / 2f) + 1, 0] = nodes[(int)(rows / 2f) + 1, 0] ^ (uint) Directions.N;
-        nodes[(int)(rows / 2f) + 1, 0] = nodes[(int)(rows / 2f) + 1, 0] ^ (uint)Directions.NW;
+        nodes[(int)(rows / 2f) - 1, 1] = nodes[(int)(rows / 2f) - 1, 1] ^ (uint) Directions.S;
+        nodes[(int)(rows / 2f) - 1, 1] = nodes[(int)(rows / 2f) - 1, 1] ^ (uint) Directions.SW;
+        nodes[(int)(rows / 2f), 1] = 0b_0000_0000;
+        nodes[(int)(rows / 2f) + 1, 1] = nodes[(int)(rows / 2f) + 1, 1] ^ (uint) Directions.N;
+        nodes[(int)(rows / 2f) + 1, 1] = nodes[(int)(rows / 2f) + 1, 1] ^ (uint) Directions.NW;
 
         // Add right side node directions
-        nodes[(int)(rows / 2f) - 1, cols - 1] = nodes[(int)(rows / 2f) - 1, cols - 1] ^ (uint)Directions.S;
-        nodes[(int)(rows / 2f) - 1, cols - 1] = nodes[(int)(rows / 2f) - 1, cols - 1] ^ (uint)Directions.SE;
-        nodes[(int)(rows / 2f), cols - 1] = nodes[(int)(rows / 2f), cols - 1] ^ (uint)Directions.N;
-        nodes[(int)(rows / 2f), cols - 1] = nodes[(int)(rows / 2f), cols - 1] ^ (uint)Directions.S;
-        nodes[(int)(rows / 2f), cols - 1] = nodes[(int)(rows / 2f), cols - 1] ^ (uint)Directions.E;
-        nodes[(int)(rows / 2f) + 1, cols - 1] = nodes[(int)(rows / 2f) + 1, cols - 1] ^ (uint)Directions.N;
-        nodes[(int)(rows / 2f) + 1, cols - 1] = nodes[(int)(rows / 2f) + 1, cols - 1] ^ (uint)Directions.NE;
+        nodes[(int)(rows / 2f) - 1, cols - 2] = nodes[(int)(rows / 2f) - 1, cols - 2] ^ (uint)Directions.S;
+        nodes[(int)(rows / 2f) - 1, cols - 2] = nodes[(int)(rows / 2f) - 1, cols - 2] ^ (uint)Directions.SE;
+        nodes[(int)(rows / 2f), 1] = 0b_0000_0000;
+        nodes[(int)(rows / 2f) + 1, cols - 2] = nodes[(int)(rows / 2f) + 1, cols - 2] ^ (uint)Directions.N;
+        nodes[(int)(rows / 2f) + 1, cols - 2] = nodes[(int)(rows / 2f) + 1, cols - 2] ^ (uint)Directions.NE;
+
     }
 
     public float StaticEvaluator(uint playerId)
     {
         float score = 0;
+        // If Deadend then significantly punish the player
+        if (GetOptions(curCordinate).Count == 0)
+        {
+            score += -100;
+        }
+        // If goal node == nonplayergoal 100 points
+        if (curCordinate.i == (int)(rows / 2f))
+        {
+            if (playerId == 1)
+            {
+                if (curCordinate.j == cols - 1)
+                {
+                    score += 200;
+                }
+            }
+            else
+            {
+                if (curCordinate.j == cols)
+                {
+                    score += 200;
+                }
+            }
+        }
+
+
         // Number of bounces nodes available
         // Distance from nearest victory nodes
         // Distance from opposite goal
@@ -198,7 +227,7 @@ public class Board
             score += (new Vector2(curCordinate.i, curCordinate.j) - new Vector2((int)(rows / 2f), cols - 1)).magnitude;
         }
         // Number of current bounces
-        score += moves[playerId];
+        //score += moves[playerId];
         return score;
     }
 
@@ -279,10 +308,12 @@ public class Board
         if (activePlayer == 0)
         {
             activePlayer = 1;
+            nonActivePlayer = 0;
         }
         else
         {
             activePlayer = 0;
+            nonActivePlayer = 1;
         }
     }
 

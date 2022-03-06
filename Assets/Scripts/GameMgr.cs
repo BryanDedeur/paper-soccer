@@ -61,6 +61,13 @@ public class GameMgr : MonoBehaviour
     {
         uint startPlayer = (uint) Random.Range(0, 2);
         board.activePlayer = startPlayer;
+        if (startPlayer == 0)
+        {
+            board.nonActivePlayer = 1;
+        } else
+        {
+            board.nonActivePlayer = 0;
+        }
     }
 
     private Node CreateNode(Vector3 pos)
@@ -154,6 +161,12 @@ public class GameMgr : MonoBehaviour
 
     }
 
+    IEnumerator RollBall()
+    {
+
+        yield return null;
+    }
+
     private void ResetBoard()
     {
         // Resets all the data necessary to restart a new round
@@ -222,7 +235,7 @@ public class GameMgr : MonoBehaviour
         }
         if(players[(int) board.activePlayer].isAI)
         {
-            (float, Directions) action = minMax.Solve(board, 3, board.activePlayer);
+            (float, Directions) action = minMax.Solve(board, 3, 5, board.activePlayer);
             print(action);
             Move(action.Item2);
         }
