@@ -14,7 +14,7 @@ public struct Coordinate
     public int j;
 }
 
-public enum Directions
+public enum Direction
 {
     N = 0b_0000_0001, // 1      --> North       (i-1    , j     )
     S = 0b_0000_0010, // 2      --> South       (i+1    , j     )
@@ -120,22 +120,22 @@ public class Board
                 else if (i == 0 && j == 1)
                 {
                     // Upper left corner node can only move south east
-                    nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.SE;
+                    nodes[i, j] = 0b_1111_1111 ^ (uint)Direction.SE;
                 }
                 else if (i == 0 && j == cols - 2)
                 {
                     // Upper right corner node can only move south west
-                    nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.SW;
+                    nodes[i, j] = 0b_1111_1111 ^ (uint)Direction.SW;
                 }
                 else if (i == rows - 1 && j == 1)
                 {
                     // Lower left corner node can only move north east
-                    nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.NE;
+                    nodes[i, j] = 0b_1111_1111 ^ (uint)Direction.NE;
                 }
                 else if (i == rows - 1 && j == cols - 2)
                 {
                     // Lower right corner node can only move north west
-                    nodes[i, j] = 0b_1111_1111 ^ (uint)Directions.NW;
+                    nodes[i, j] = 0b_1111_1111 ^ (uint)Direction.NW;
                 } else if (j == 0 || j == cols - 1)
                 {
                     nodes[i, j] = 0b_1111_1111;
@@ -143,22 +143,22 @@ public class Board
                 else if (i == 0)
                 {
                     // Top Wall
-                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.SE | (uint)Directions.S | (uint)Directions.SW);
+                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Direction.SE | (uint)Direction.S | (uint)Direction.SW);
                 }
                 else if (i == rows - 1)
                 {
                     // Lower Wall
-                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NE | (uint)Directions.N | (uint)Directions.NW);
+                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Direction.NE | (uint)Direction.N | (uint)Direction.NW);
                 }
                 else if (j == 1)
                 {
                     // Left wall
-                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NE | (uint)Directions.E | (uint)Directions.SE);
+                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Direction.NE | (uint)Direction.E | (uint)Direction.SE);
                 }
                 else if (j == cols - 2)
                 {
                     // Right Wall
-                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Directions.NW | (uint)Directions.W | (uint)Directions.SW);
+                    nodes[i, j] = 0b_1111_1111 ^ ((uint)Direction.NW | (uint)Direction.W | (uint)Direction.SW);
                 } 
                 
 
@@ -172,66 +172,94 @@ public class Board
         moves[1] = 0;
 
         // Add left side node directions
-        nodes[(int)(rows / 2f) - 1, 1] = nodes[(int)(rows / 2f) - 1, 1] ^ (uint) Directions.S;
-        nodes[(int)(rows / 2f) - 1, 1] = nodes[(int)(rows / 2f) - 1, 1] ^ (uint) Directions.SW;
-        nodes[(int)(rows / 2f), 1] = 0b_0000_0000;
-        nodes[(int)(rows / 2f) + 1, 1] = nodes[(int)(rows / 2f) + 1, 1] ^ (uint) Directions.N;
-        nodes[(int)(rows / 2f) + 1, 1] = nodes[(int)(rows / 2f) + 1, 1] ^ (uint) Directions.NW;
+        nodes[(int)(rows / 2f) - 1, 1] = nodes[(int)(rows / 2f) - 1, 1] ^ (uint) Direction.S;
+        nodes[(int)(rows / 2f) - 1, 1] = nodes[(int)(rows / 2f) - 1, 1] ^ (uint) Direction.SW;
+        nodes[(int)(rows / 2f), 1] = nodes[(int)(rows / 2f), 1] ^ (uint)Direction.N;
+        nodes[(int)(rows / 2f), 1] = nodes[(int)(rows / 2f), 1] ^ (uint)Direction.W;
+        nodes[(int)(rows / 2f), 1] = nodes[(int)(rows / 2f), 1] ^ (uint)Direction.S;
+
+        nodes[(int)(rows / 2f) + 1, 1] = nodes[(int)(rows / 2f) + 1, 1] ^ (uint) Direction.N;
+        nodes[(int)(rows / 2f) + 1, 1] = nodes[(int)(rows / 2f) + 1, 1] ^ (uint) Direction.NW;
 
         // Add right side node directions
-        nodes[(int)(rows / 2f) - 1, cols - 2] = nodes[(int)(rows / 2f) - 1, cols - 2] ^ (uint)Directions.S;
-        nodes[(int)(rows / 2f) - 1, cols - 2] = nodes[(int)(rows / 2f) - 1, cols - 2] ^ (uint)Directions.SE;
-        nodes[(int)(rows / 2f), 1] = 0b_0000_0000;
-        nodes[(int)(rows / 2f) + 1, cols - 2] = nodes[(int)(rows / 2f) + 1, cols - 2] ^ (uint)Directions.N;
-        nodes[(int)(rows / 2f) + 1, cols - 2] = nodes[(int)(rows / 2f) + 1, cols - 2] ^ (uint)Directions.NE;
+        nodes[(int)(rows / 2f) - 1, cols - 2] = nodes[(int)(rows / 2f) - 1, cols - 2] ^ (uint)Direction.S;
+        nodes[(int)(rows / 2f) - 1, cols - 2] = nodes[(int)(rows / 2f) - 1, cols - 2] ^ (uint)Direction.SE;
+        nodes[(int)(rows / 2f), cols - 2] = nodes[(int)(rows / 2f), cols - 2] ^ (uint)Direction.N;
+        nodes[(int)(rows / 2f), cols - 2] = nodes[(int)(rows / 2f), cols - 2] ^ (uint)Direction.E;
+        nodes[(int)(rows / 2f), cols - 2] = nodes[(int)(rows / 2f), cols - 2] ^ (uint)Direction.S;
+        nodes[(int)(rows / 2f) + 1, cols - 2] = nodes[(int)(rows / 2f) + 1, cols - 2] ^ (uint)Direction.N;
+        nodes[(int)(rows / 2f) + 1, cols - 2] = nodes[(int)(rows / 2f) + 1, cols - 2] ^ (uint)Direction.NE;
 
     }
 
-    public float StaticEvaluator(uint playerId)
+    private float DistanceFromSelfGoal(uint playerId)
     {
-        float score = 0;
-        // If Deadend then significantly punish the player
-        if (GetOptions(curCordinate).Count == 0)
+        if (playerId == 1)
         {
-            score += -100;
+            return (new Vector2(curCordinate.i, curCordinate.j) - new Vector2((int)(rows / 2f), 0)).magnitude;
         }
-        // If goal node == nonplayergoal 100 points
+        return (new Vector2(curCordinate.i, curCordinate.j) - new Vector2((int)(rows / 2f), cols - 1)).magnitude;
+    }
+
+    private int IsAtGoal(uint playerId)
+    {
         if (curCordinate.i == (int)(rows / 2f))
         {
             if (playerId == 1)
             {
                 if (curCordinate.j == cols - 1)
                 {
-                    score += 200;
+                    return 1;
                 }
             }
             else
             {
-                if (curCordinate.j == cols)
+                if (curCordinate.j == 0)
                 {
-                    score += 200;
+                    return 1;
                 }
             }
         }
-
-
-        // Number of bounces nodes available
-        // Distance from nearest victory nodes
-        // Distance from opposite goal
-        if (playerId == 1)
-        {
-            score += (new Vector2(curCordinate.i, curCordinate.j) - new Vector2((int)(rows / 2f), 0)).magnitude;
-        }
-        else
-        {
-            score += (new Vector2(curCordinate.i, curCordinate.j) - new Vector2((int)(rows / 2f), cols - 1)).magnitude;
-        }
-        // Number of current bounces
-        //score += moves[playerId];
-        return score;
+        return 0;
     }
 
-    private void MarkDirectionUnavailbale(Directions dir, Coordinate cor)
+    private int IsAtDeadEnd(uint playerId)
+    {
+        if (GetOptions(curCordinate).Count == 0)
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+    public float StaticEvaluator(uint playerId)
+    {
+        uint otherPlayerId = 0;
+        if (playerId == 0)
+        {
+            otherPlayerId = 1;
+        }
+
+        float selfScore = 0;
+        float opponentScore = 0;
+
+        // If deadend reduce several points;
+        selfScore += IsAtDeadEnd(playerId) * -100.0f;
+        opponentScore += IsAtDeadEnd(otherPlayerId) * -100.0f;
+
+        // If at goal increase score
+        selfScore += IsAtGoal(playerId) * 200.0f;
+        opponentScore += IsAtGoal(otherPlayerId) * 200.0f;
+
+        // If far away from self goal then increase score
+        selfScore += DistanceFromSelfGoal(playerId);
+        opponentScore += DistanceFromSelfGoal(otherPlayerId);
+
+
+        return selfScore;
+    }
+
+    private void MarkDirectionUnavailbale(Direction dir, Coordinate cor)
     {
         nodes[cor.i, cor.j] = nodes[cor.i, cor.j] | ((uint)dir);
     }
@@ -241,7 +269,7 @@ public class Board
         return BitCount(nodes[curCordinate.i, curCordinate.j]) == 1;
     }
 
-    public bool IsValidMove(Directions dir)
+    public bool IsValidMove(Direction dir)
     {
         return !IsBitSet(nodes[curCordinate.i, curCordinate.j], dir);
     }
@@ -249,13 +277,13 @@ public class Board
     private int IsTerminalState(Coordinate cor)
     {
         // If goal node
-        if (cor.j < 0)
+        if (cor.j == 0)
         {
             gameOver = true;
             winner = 0;
             return 0;
         }
-        if (cor.j >= cols)
+        if (cor.j == cols - 1)
         {
             gameOver = true;
             winner = 1;
@@ -275,7 +303,7 @@ public class Board
      * makes a move towards 
      * returns if terminal state or not
      */
-    public int MakeMove(Directions direction)
+    public int MakeMove(Direction direction)
     {
         moves[activePlayer]++;
 
@@ -322,33 +350,33 @@ public class Board
         return (b & (1 << pos)) != 0;
     }
 
-    bool IsBitSet(uint b, Directions dir)
+    bool IsBitSet(uint b, Direction dir)
     {
         bool state = false;
         switch (dir)
         {
-            case Directions.N:
+            case Direction.N:
                 state = IsBitSet(b, 0);
                 break;
-            case Directions.S:
+            case Direction.S:
                 state = IsBitSet(b, 1);
                 break;
-            case Directions.E:
+            case Direction.E:
                 state = IsBitSet(b, 2);
                 break;
-            case Directions.W:
+            case Direction.W:
                 state = IsBitSet(b, 3);
                 break;
-            case Directions.NE:
+            case Direction.NE:
                 state = IsBitSet(b, 4);
                 break;
-            case Directions.NW:
+            case Direction.NW:
                 state = IsBitSet(b, 5);
                 break;
-            case Directions.SE:
+            case Direction.SE:
                 state = IsBitSet(b, 6);
                 break;
-            case Directions.SW:
+            case Direction.SW:
                 state = IsBitSet(b, 7);
                 break;
             default:
@@ -368,56 +396,101 @@ public class Board
         return count;
     }
 
-    public Dictionary<Directions, Coordinate> GetOptions(Coordinate cor)
+    public List<Direction> GetOptions(Coordinate cor)
     {
-        // TODO consider perimiter
-        Dictionary<Directions, Coordinate> options = new Dictionary<Directions, Coordinate>();
+        List<Direction> options = new List<Direction>();
         if (!IsBitSet(nodes[cor.i, cor.j], 0)) // N
-            options.Add(Directions.N, new Coordinate(cor.i - 1, cor.j));
+            options.Add(Direction.N);
         if (!IsBitSet(nodes[cor.i, cor.j], 1)) // S
-            options.Add(Directions.S, new Coordinate(cor.i + 1, cor.j));
+            options.Add(Direction.S);
         if (!IsBitSet(nodes[cor.i, cor.j], 2)) // E
-            options.Add(Directions.E, new Coordinate(cor.i, cor.j + 1));
+            options.Add(Direction.E);
         if (!IsBitSet(nodes[cor.i, cor.j], 3)) // W
-            options.Add(Directions.W, new Coordinate(cor.i, cor.j - 1));
+            options.Add(Direction.W);
         if (!IsBitSet(nodes[cor.i, cor.j], 4)) // NE
-            options.Add(Directions.NE, new Coordinate(cor.i - 1, cor.j + 1));
+            options.Add(Direction.NE);
         if (!IsBitSet(nodes[cor.i, cor.j], 5)) // NW
-            options.Add(Directions.NW, new Coordinate(cor.i - 1, cor.j - 1));
+            options.Add(Direction.NW);
         if (!IsBitSet(nodes[cor.i, cor.j], 6)) // SE
-            options.Add(Directions.SE, new Coordinate(cor.i + 1, cor.j + 1));
+            options.Add(Direction.SE);
         if (!IsBitSet(nodes[cor.i, cor.j], 7)) // SW
-            options.Add(Directions.SW, new Coordinate(cor.i + 1, cor.j - 1));
+            options.Add(Direction.SW);
         return options;
     }
 
-    private Coordinate GetCoordinateInDirection(Coordinate cor, Directions dir)
+    public List<List<Direction>> GetOptionsRecursive(uint focusPlayer, int maxDepth = -1)
+    {
+        List<List<Direction>> options = new List<List<Direction>>();
+
+        if (this.activePlayer != focusPlayer || maxDepth == 0)
+        {
+            return options;
+        }
+
+        // For each possible move at current state
+        foreach(Direction dir in GetOptions(this.curCordinate))
+        {
+            // Make move on hypothetical board and then 
+            Board tempBoard = this.FastDeepCopy();
+            tempBoard.MakeMove(dir);
+            if (tempBoard.gameOver)
+            {
+                // Add current direction as a possible move
+                options.Add(new List<Direction>());
+                options[options.Count - 1].Add(dir);
+            }
+            else if (!tempBoard.AtOpenNode())
+            {
+                // Get all possible options from current state
+                List<List<Direction>> subOptions = tempBoard.GetOptionsRecursive(focusPlayer, maxDepth - 1);
+                foreach (List<Direction> subMoves in subOptions)
+                {
+                    options.Add(new List<Direction>());
+                    options[options.Count - 1].Add(dir);
+                    foreach (Direction subMove in subMoves)
+                    {
+                        options[options.Count - 1].Add(subMove);
+                    }
+                }
+            } else
+            {
+                // Add current direction as a possible move
+                options.Add(new List<Direction>());
+                options[options.Count - 1].Add(dir);
+            }
+
+        }
+
+        return options;
+    }
+
+    private Coordinate GetCoordinateInDirection(Coordinate cor, Direction dir)
     {
         Coordinate otherCor = new Coordinate();
         switch (dir)
         {
-            case Directions.N:
+            case Direction.N:
                 otherCor = new Coordinate(cor.i - 1, cor.j);
                 break;
-            case Directions.S:
+            case Direction.S:
                 otherCor = new Coordinate(cor.i + 1, cor.j);
                 break;
-            case Directions.E:
+            case Direction.E:
                 otherCor = new Coordinate(cor.i, cor.j + 1);
                 break;
-            case Directions.W:
+            case Direction.W:
                 otherCor = new Coordinate(cor.i, cor.j - 1);
                 break;
-            case Directions.NE:
+            case Direction.NE:
                 otherCor = new Coordinate(cor.i - 1, cor.j + 1);
                 break;
-            case Directions.NW:
+            case Direction.NW:
                 otherCor = new Coordinate(cor.i - 1, cor.j - 1);
                 break;
-            case Directions.SE:
+            case Direction.SE:
                 otherCor = new Coordinate(cor.i + 1, cor.j + 1);
                 break;
-            case Directions.SW:
+            case Direction.SW:
                 otherCor = new Coordinate(cor.i + 1, cor.j - 1);
                 break;
             default:
@@ -427,34 +500,34 @@ public class Board
         return otherCor;
     }
 
-    private Directions GetOppositeDirection(Directions dir)
+    private Direction GetOppositeDirection(Direction dir)
     {
-        Directions opposite = Directions.N;
+        Direction opposite = Direction.N;
         switch (dir)
         {
-            case Directions.N:
-                opposite = Directions.S;
+            case Direction.N:
+                opposite = Direction.S;
                 break;
-            case Directions.S:
-                opposite = Directions.N;
+            case Direction.S:
+                opposite = Direction.N;
                 break;
-            case Directions.E:
-                opposite = Directions.W;
+            case Direction.E:
+                opposite = Direction.W;
                 break;
-            case Directions.W:
-                opposite = Directions.E;
+            case Direction.W:
+                opposite = Direction.E;
                 break;
-            case Directions.NE:
-                opposite = Directions.SW;
+            case Direction.NE:
+                opposite = Direction.SW;
                 break;
-            case Directions.NW:
-                opposite = Directions.SE;
+            case Direction.NW:
+                opposite = Direction.SE;
                 break;
-            case Directions.SE:
-                opposite = Directions.NW;
+            case Direction.SE:
+                opposite = Direction.NW;
                 break;
-            case Directions.SW:
-                opposite = Directions.NE;
+            case Direction.SW:
+                opposite = Direction.NE;
                 break;
             default:
                 break;

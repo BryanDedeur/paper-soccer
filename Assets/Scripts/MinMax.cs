@@ -4,56 +4,68 @@ using UnityEngine;
 
 public class MinMax
 {
-    public (float, Directions) Solve(Board board, uint depth, uint playerDepth, uint maximizePlayerId)
+    public (float, List<Direction>) Solve(Board board, uint depth, uint maximizePlayerId)
     {
-        if (board.activePlayer != maximizePlayerId)
+        // Check if board is in terminal state
+        if (board.gameOver || depth <= 0)
         {
-            playerDepth--;
+            if (board.activePlayer != maximizePlayerId)
+                return (board.StaticEvaluator(board.nonActivePlayer), new List<Direction>());
+            else
+                return (board.StaticEvaluator(board.activePlayer), new List<Direction>());
         }
 
         depth--;
 
-        // Check if board is in terminal state
-        if (board.gameOver || playerDepth <= 0 || depth <= 0)
-        {
-            if (board.activePlayer != maximizePlayerId)
-                return (board.StaticEvaluator(board.nonActivePlayer), Directions.N);
-            else
-                return (board.StaticEvaluator(board.activePlayer), Directions.N);
-        }
-
-        Directions action = Directions.N;
+        List<Direction> actions = new List<Direction>();
         float bestValue = 0;
         if (board.activePlayer == maximizePlayerId)
         {
             bestValue = -10000;
-            foreach (KeyValuePair<Directions, Coordinate> cord in board.GetOptions(board.curCordinate))
+            foreach (List<Direction> setOfMoves in board.GetOptionsRecursive(board.activePlayer))
             {
+                // Simulate a set of moves on a new board
                 Board newBoard = board.FastDeepCopy();
-                newBoard.MakeMove(cord.Key);
-                (float, Directions) value = Solve(newBoard, depth, playerDepth, maximizePlayerId);
+                foreach (Direction dir in setOfMoves)
+                {
+                    newBoard.MakeMove(dir);
+                }
+                // Evaluate the board further with minMax
+                (float, List<Direction>) value = Solve(newBoard, depth, maximizePlayerId);
                 if (value.Item1 > bestValue)
                 {
                     bestValue = value.Item1;
-                    action = cord.Key;
+                    actions.Clear();
+                    foreach (Direction dir in setOfMoves)
+                    {
+                        actions.Add(dir);
+                    }
                 }
             }
         } else
         {
             bestValue = 10000;
-            foreach (KeyValuePair<Directions, Coordinate> cord in board.GetOptions(board.curCordinate))
+            foreach (List<Direction> setOfMoves in board.GetOptionsRecursive(board.activePlayer))
             {
+                // Simulate a set of moves on a new board
                 Board newBoard = board.FastDeepCopy();
-                newBoard.MakeMove(cord.Key);
-                (float, Directions) value = Solve(newBoard, depth, playerDepth, maximizePlayerId);
+                foreach (Direction dir in setOfMoves)
+                {
+                    newBoard.MakeMove(dir);
+                }
+                // Evaluate the board further with minMax
+                (float, List<Direction>) value = Solve(newBoard, depth, maximizePlayerId);
                 if (value.Item1 < bestValue)
                 {
                     bestValue = value.Item1;
-                    action = cord.Key;
+                    actions.Clear();
+                    foreach (Direction dir in setOfMoves)
+                    {
+                        actions.Add(dir);
+                    }
                 }                
-                // TODO update how we do this best value stuff
             }
         }
-        return (bestValue, action);
+        return (bestValue, actions);
     }
 }

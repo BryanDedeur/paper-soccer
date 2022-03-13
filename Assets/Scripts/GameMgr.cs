@@ -6,6 +6,7 @@ using UnityEngine;
 public class GameMgr : MonoBehaviour
 {
     public static GameMgr instance;
+    public Material lineMaterial;
 
     public GameObject nodePrefab;
     public List<Player> players;
@@ -27,11 +28,14 @@ public class GameMgr : MonoBehaviour
     private const int boardLength = 11;
 
     private Node[,] nodes;
-
     private Node[] goalNodes;
 
     private static int nodeCount;
     private MinMax minMax;
+
+    private Queue<IEnumerator> moveQueue = new Queue<IEnumerator>();
+
+    private bool actionsEnabled = true;
 
     private void Awake()
     {
@@ -47,6 +51,7 @@ public class GameMgr : MonoBehaviour
         goalNodes = new Node[2];
         board = new Board(boardWidth, boardLength);
         CreateNodes(boardWidth, boardLength);
+        DrawBoardLines();
         RandomizePlayer();
         ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
         ShowOptions();
@@ -54,7 +59,7 @@ public class GameMgr : MonoBehaviour
 
     private void Start()
     {
-
+        StartCoroutine(RunCoroutineMoveQueue());
     }
 
     private void RandomizePlayer()
@@ -95,54 +100,65 @@ public class GameMgr : MonoBehaviour
             for (int z = 0; z < dimZ; z++)
             {
                 nodes[x,z] = CreateNode(new Vector3(startPos.x + x * spacing, 0.01f, startPos.z + z * spacing));
+                if ((z == 0 || z == dimZ - 1) && x != (int)(dimX / 2f))
+                {
+                    nodes[x, z].gameObject.SetActive(false);
+                }            
             }
         }
 
         // Creates extra nodes for the goals
-        goalNodes[1] = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (dimZ * spacing)));
-        goalNodes[0] = CreateNode(new Vector3(startPos.x + ((int)(dimX / 2)) * spacing, 0.01f, startPos.z + (-1 * spacing)));
+        goalNodes[0] = nodes[(int)(dimX / 2f), 0];
+        goalNodes[1] = nodes[(int)(dimX / 2f), dimZ - 1];
     }
 
-    public void Move(Directions direction)
+    void DrawBoardLines()
+    {
+        Vector3 upperLeftCorner = new Vector3(-boardWidth, 0, -boardLength + 2);
+        Vector3 upperRightCorner = new Vector3(-boardWidth, 0, boardLength - 2);
+        Vector3 lowerLeftCorner = new Vector3(boardWidth, 0, -boardLength + 2);
+        Vector3 lowerRightCorner = new Vector3(boardWidth, 0, boardLength - 2);
+
+        LineMgr.instance.CreateLine(upperLeftCorner, upperRightCorner, lineMaterial);
+        LineMgr.instance.CreateLine(upperRightCorner, lowerRightCorner, lineMaterial);
+        LineMgr.instance.CreateLine(lowerLeftCorner, lowerRightCorner, lineMaterial);
+        LineMgr.instance.CreateLine(lowerLeftCorner, upperLeftCorner, lineMaterial);
+
+    }
+
+    public void Move(Direction direction)
     {
         if (!board.gameOver)
         {
             if (board.IsValidMove(direction))
             {
-                HideOptions();
                 Player player = players[(int) board.activePlayer];
                 int gameOverReached = board.MakeMove(direction);
                 player.IncrementMoveCounter();
-
                 Vector3 startPos = nodes[board.prevCordinate.i, board.prevCordinate.j].transform.position;
                 Material prevPlayer = player.material;
                 if (gameOverReached == -1)
                 {
                     // If player makes a move and game is continuing
                     Vector3 endPos = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
-                    LineMgr.instance.CreateLine(startPos, endPos, prevPlayer);
-                    ball.transform.position = endPos;
+                    moveQueue.Enqueue(RollBall(endPos, player));
                     if (!board.AtOpenNode()) {
                         // Player bounced the ball their turn continues
                         player.IncrementBounceCounter();
                     }
-                    ShowOptions();
                 }
                 else if (gameOverReached == 2)
                 {
                     // No winner but game is over
                     Vector3 endPos = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
-                    LineMgr.instance.CreateLine(startPos, endPos, prevPlayer);
-                    ball.transform.position = endPos;
-                    player.placing = false;
+                    moveQueue.Enqueue(RollBall(endPos, player));
                 }
                 else
                 {
                     print(gameOverReached);
                     players[gameOverReached].IncrementWinCounter();
                     Vector3 endPos = goalNodes[gameOverReached].transform.position;
-                    LineMgr.instance.CreateLine(startPos, endPos, prevPlayer);
-                    ball.transform.position = endPos;
+                    moveQueue.Enqueue(RollBall(endPos, player));
                     GameOver.Invoke();
                 }
 
@@ -152,92 +168,118 @@ public class GameMgr : MonoBehaviour
 
                 if (player.id != board.activePlayer)
                 {
-                    player.placing = false;
                     PlayersChanged.Invoke();
-                    players[(int) board.activePlayer].placing = true;
                 }
             }
         }
-
     }
 
-    IEnumerator RollBall()
+    public void MakeMoves(List<Direction> moves)
     {
-
-        yield return null;
+        while(moves.Count > 0)
+        {
+            Move(moves[0]);
+            moves.RemoveAt(0);
+        }
     }
 
-    private void ResetBoard()
+    IEnumerator RunCoroutineMoveQueue()
     {
-        // Resets all the data necessary to restart a new round
-        //ResetAllNodeOptions();
+        while (true)
+        {
+            while (moveQueue.Count > 0)
+                yield return StartCoroutine(moveQueue.Dequeue());
+            yield return null;
+        }
+    }
 
-        // Moves the ball to the center
-/*        int i = (int)(boardWidth / 2);
-        int j = (int)(boardLength / 2);
-        MoveToNode(i,j);*/
+    IEnumerator RollBall(Vector3 targetPos, Player who)
+    {
+        actionsEnabled = false;
+
+        HideOptions();
+        Vector3 startPos = ball.transform.position;
+        LineMgr.instance.CreateLine(startPos, targetPos, who.material);
+        Vector3 diff = (targetPos - ball.transform.position);
+        Vector3 dir = diff.normalized;
+        float distance = diff.magnitude;
+        float scale = 0;
+        float speed = 4f;
+        while (scale <= 1)
+        {
+            scale += speed * Time.deltaTime;
+            ball.transform.position = startPos + diff * (-Mathf.Cos(scale * Mathf.PI) + 1)/2.0f;
+            yield return null;
+        }
+        ball.transform.position = targetPos;
+        ShowOptions();
+        actionsEnabled = true;
     }
 
     private void HideOptions()
     {
-        foreach (KeyValuePair<Directions, Coordinate> cord in board.GetOptions(board.curCordinate))
-        {
-            //nodes[cord.Value.i, cord.Value.j].highlight.SetState(false);
-            //nodes[cord.Value.i, cord.Value.j].interactable.SetState(false);
-        }
         DirectionIndicator.instance.HideAll();
     }
 
     private void ShowOptions()
     {
-        foreach (KeyValuePair<Directions, Coordinate> cord in board.GetOptions(board.curCordinate))
+        foreach (Direction dir in board.GetOptions(board.curCordinate))
         {
-            //nodes[cord.Value.i, cord.Value.j].highlight.SetState(true);
-            //nodes[cord.Value.i, cord.Value.j].interactable.SetState(true);
-            DirectionIndicator.instance.ShowDirection(cord.Key);
+            DirectionIndicator.instance.ShowDirection(dir);
         }
         DirectionIndicator.instance.transform.position = ball.transform.position;
     }
 
+    private void ShowAllMoves()
+    {
+        //board.GetOptionsRecursive(board, board.activePlayer);
+    }
+
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Keypad8))
+        if (actionsEnabled)
         {
-            Move(Directions.N);
+            if (players[(int)board.activePlayer].isAI)
+            {
+                (float, List<Direction>) action = minMax.Solve(board, 1, board.activePlayer);
+                MakeMoves(action.Item2);
+
+            } else
+            {
+                if (Input.GetKeyDown(KeyCode.Keypad8))
+                {
+                    Move(Direction.N);
+                }
+                if (Input.GetKeyDown(KeyCode.Keypad2))
+                {
+                    Move(Direction.S);
+                }
+                if (Input.GetKeyDown(KeyCode.Keypad6))
+                {
+                    Move(Direction.E);
+                }
+                if (Input.GetKeyDown(KeyCode.Keypad4))
+                {
+                    Move(Direction.W);
+                }
+                if (Input.GetKeyDown(KeyCode.Keypad7))
+                {
+                    Move(Direction.NW);
+                }
+                if (Input.GetKeyDown(KeyCode.Keypad9))
+                {
+                    Move(Direction.NE);
+                }
+                if (Input.GetKeyDown(KeyCode.Keypad1))
+                {
+                    Move(Direction.SW);
+                }
+                if (Input.GetKeyDown(KeyCode.Keypad3))
+                {
+                    Move(Direction.SE);
+                }
+            }
         }
-        if (Input.GetKeyDown(KeyCode.Keypad2))
-        {
-            Move(Directions.S);
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad6))
-        {
-            Move(Directions.E);
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad4))
-        {
-            Move(Directions.W);
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad7))
-        {
-            Move(Directions.NW);
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad9))
-        {
-            Move(Directions.NE);
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad1))
-        {
-            Move(Directions.SW);
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad3))
-        {
-            Move(Directions.SE);
-        }
-        if(players[(int) board.activePlayer].isAI)
-        {
-            (float, Directions) action = minMax.Solve(board, 3, 5, board.activePlayer);
-            print(action);
-            Move(action.Item2);
-        }
+
     }
 }
