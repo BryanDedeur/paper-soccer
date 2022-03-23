@@ -226,13 +226,13 @@ public class Board
         return 0;
     }
 
-    private int IsAtDeadEnd(uint playerId)
+    private bool IsAtDeadEnd(uint playerId)
     {
         if (GetOptions(curCordinate).Count == 0)
         {
-            return 1;
+            return true;
         }
-        return 0;
+        return false;
     }
 
     public float StaticEvaluator(uint playerId)
@@ -240,15 +240,19 @@ public class Board
         float selfScore = 0;
 
         // If deadend reduce several points;
-        selfScore += IsAtDeadEnd(playerId) * -100.0f;
+        if (IsAtDeadEnd(playerId) && !(IsAtGoal(playerId) == 1))
+        {
+            selfScore += -999.0f;
+        } else
+        {
+            // If at goal increase score
+            selfScore += IsAtGoal(playerId) * 200.0f;
 
-        // If at goal increase score
-        selfScore += IsAtGoal(playerId) * 200.0f;
+            // If far away from self goal then increase score
+            selfScore += DistanceFromSelfGoal(playerId);
 
-        // If far away from self goal then increase score
-        selfScore += DistanceFromSelfGoal(playerId);
-
-        selfScore -= moves[playerId];
+            selfScore -= (1/(moves[playerId] +1));
+        }
 
         return selfScore;
     }
