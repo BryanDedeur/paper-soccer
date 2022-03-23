@@ -38,4 +38,13 @@ public class LineMgr : MonoBehaviour
         lr.generateLightingData = true;
         return lr;
     }
+
+    public void ClearAll()
+    {
+        foreach (Transform child in container.transform)
+        {
+            Destroy(child.gameObject);
+        }
+        count = 0;
+    }
 }

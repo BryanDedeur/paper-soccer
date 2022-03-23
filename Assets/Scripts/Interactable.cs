@@ -10,6 +10,8 @@ public class Interactable : MonoBehaviour
     public UnityEvent OnIndicatorChange; // fires when selection indicator changes
     public UnityEvent OnInteraction; // fires when click is in range
 
+    public Direction associatedDirection;
+
     private void Start()
     {
         InteractableMgr.instance.interactables.Add(this);
@@ -33,5 +35,6 @@ public class Interactable : MonoBehaviour
     public void Interact()
     {
         OnInteraction.Invoke();
+        GameMgr.instance.Move(associatedDirection);
     }
 }

@@ -457,7 +457,7 @@ public class Board
         return options;
     }
 
-    private Coordinate GetCoordinateInDirection(Coordinate cor, Direction dir)
+    public Coordinate GetCoordinateInDirection(Coordinate cor, Direction dir)
     {
         Coordinate otherCor = new Coordinate();
         switch (dir)

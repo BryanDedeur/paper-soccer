@@ -13,10 +13,8 @@ public class GameMgr : MonoBehaviour
 
     public GameObject ball;
 
-    public List<Vector2Int> moves;
-
     // Events
-    public UnityEvent GameOver;
+    public StringEvent GameOver;
     public UnityEvent PlayersChanged;
     public UnityEvent BallMoved;
 
@@ -29,6 +27,8 @@ public class GameMgr : MonoBehaviour
 
     private Node[,] nodes;
     private Node[] goalNodes;
+
+    private List<Node> activeNodes;
 
     private static int nodeCount;
     private MinMax minMax;
@@ -47,7 +47,7 @@ public class GameMgr : MonoBehaviour
             Destroy(this);
         }
         minMax = new MinMax();
-
+        activeNodes = new List<Node>();
         goalNodes = new Node[2];
         board = new Board(boardWidth, boardLength);
         CreateNodes(boardWidth, boardLength);
@@ -152,6 +152,8 @@ public class GameMgr : MonoBehaviour
                     // No winner but game is over
                     Vector3 endPos = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
                     moveQueue.Enqueue(RollBall(endPos, player));
+                    GameOver.Invoke("Winner: None");
+                    players[(int)board.activePlayer].SetPlacing(false);
                 }
                 else
                 {
@@ -159,7 +161,14 @@ public class GameMgr : MonoBehaviour
                     players[gameOverReached].IncrementWinCounter();
                     Vector3 endPos = goalNodes[gameOverReached].transform.position;
                     moveQueue.Enqueue(RollBall(endPos, player));
-                    GameOver.Invoke();
+                    if (players[(int)board.activePlayer].isAI)
+                    {
+                        GameOver.Invoke("Winner: Player" + ((int)board.activePlayer + 1).ToString() + " (AI)");
+                    } else
+                    {
+                        GameOver.Invoke("Winner: Player" + ((int)board.activePlayer + 1).ToString() + " (Human)");
+                    }
+                    players[(int)board.activePlayer].SetPlacing(false) ;
                 }
 
                 // Evaluate the board
@@ -168,10 +177,27 @@ public class GameMgr : MonoBehaviour
 
                 if (player.id != board.activePlayer)
                 {
+                    players[(int)board.activePlayer].SetPlacing(true);
+                    players[(int)player.id].SetPlacing(false);
+
                     PlayersChanged.Invoke();
+
                 }
             }
         }
+    }
+
+    public void ResetBoard()
+    {
+        LineMgr.instance.ClearAll();
+        board = new Board(boardWidth, boardLength);
+        DrawBoardLines();
+        RandomizePlayer();
+        ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
+        ShowOptions();
+
+        players[0].Reset();
+        players[1].Reset();
     }
 
     public void MakeMoves(List<Direction> moves)
@@ -222,6 +248,12 @@ public class GameMgr : MonoBehaviour
     private void HideOptions()
     {
         DirectionIndicator.instance.HideAll();
+        foreach(Node node in activeNodes)
+        {
+            node.interactable.active = false;
+        }
+        activeNodes.Clear();
+
     }
 
     private void ShowOptions()
@@ -229,6 +261,11 @@ public class GameMgr : MonoBehaviour
         foreach (Direction dir in board.GetOptions(board.curCordinate))
         {
             DirectionIndicator.instance.ShowDirection(dir);
+            Coordinate cor = board.GetCoordinateInDirection(board.curCordinate, dir);
+            nodes[cor.i, cor.j].interactable.active = true;
+            nodes[cor.i, cor.j].interactable.associatedDirection = dir;
+            activeNodes.Add(nodes[cor.i, cor.j]);
+            
         }
         DirectionIndicator.instance.transform.position = ball.transform.position;
     }
@@ -244,8 +281,9 @@ public class GameMgr : MonoBehaviour
         {
             if (players[(int)board.activePlayer].isAI)
             {
-                (float, List<Direction>) action = minMax.Solve(board, board.turns, board.activePlayer);
-                MakeMoves(action.Item2);
+                (float, Direction) action = minMax.Solve(board, players[(int)board.activePlayer].searchDepth, float.NegativeInfinity, float.PositiveInfinity, board.activePlayer);
+                //MakeMoves(action.Item2);
+                Move(action.Item2);
 
             } else
             {
