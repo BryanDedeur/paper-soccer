@@ -16,6 +16,30 @@ public class Flashing : MonoBehaviour
     private bool active = true;
     private float timeRemaining = 1;
 
+    public void SetRunning(bool state)
+    {
+        running = state;
+        if (!running)
+        {
+            OnActivated.Invoke();
+        }
+    }
+
+    public void Toggle(bool state)
+    {
+        active = !active;
+        if (active)
+        {
+            OnActivated.Invoke();
+            timeRemaining = onTime;
+        }
+        else
+        {
+            timeRemaining = offTime;
+            OffActivated.Invoke();
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -24,18 +48,8 @@ public class Flashing : MonoBehaviour
             timeRemaining -= Time.deltaTime;
             if (timeRemaining < 0)
             {
-                active = !active;
-                if (active)
-                {
-                    OnActivated.Invoke();
-                    timeRemaining = onTime;
-                }
-                else
-                {
-                    timeRemaining = offTime;
-                    OffActivated.Invoke();
-                }
 
+                Toggle(!active);
             }
         }
     }

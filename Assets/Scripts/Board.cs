@@ -226,13 +226,13 @@ public class Board
         return 0;
     }
 
-    private bool IsAtDeadEnd(uint playerId)
+    private int IsAtDeadEnd(uint playerId)
     {
         if (GetOptions(curCordinate).Count == 0)
         {
-            return true;
+            return 1;
         }
-        return false;
+        return 0;
     }
 
     public float StaticEvaluator(uint playerId)
@@ -240,27 +240,23 @@ public class Board
         float selfScore = 0;
 
         // If deadend reduce several points;
-        if (IsAtDeadEnd(playerId) && !(IsAtGoal(playerId) == 1))
-        {
-            selfScore += -999.0f;
-        } else
-        {
-            // If at goal increase score
-            selfScore += IsAtGoal(playerId) * 200.0f;
+        selfScore += IsAtDeadEnd(playerId) * -100.0f;
 
-            // If far away from self goal then increase score
-            selfScore += DistanceFromSelfGoal(playerId);
+        // If at goal increase score
+        selfScore += IsAtGoal(playerId) * 200.0f;
 
-            selfScore -= (1/(moves[playerId] +1));
-        }
+        // If far away from self goal then increase score
+        selfScore += DistanceFromSelfGoal(playerId);
+
+        selfScore -= moves[playerId];
 
         return selfScore;
     }
 
-/*    private void MarkDirectionAvailbale(Direction dir, Coordinate cor)
-    {
-        nodes[cor.i, cor.j] = nodes[cor.i, cor.j] | ((uint)dir);
-    }*/
+    /*    private void MarkDirectionAvailbale(Direction dir, Coordinate cor)
+        {
+            nodes[cor.i, cor.j] = nodes[cor.i, cor.j] | ((uint)dir);
+        }*/
 
     private void MarkDirectionUnavailbale(Direction dir, Coordinate cor)
     {
