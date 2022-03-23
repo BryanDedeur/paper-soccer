@@ -59,6 +59,7 @@ public class Board
     public Coordinate prevCordinate;
 
     // stats
+    public int turns;
     public uint[] moves;
 
     public uint activePlayer;
@@ -74,6 +75,7 @@ public class Board
         rows = _rows;
         cols = _cols;
         moves = new uint[2];
+        turns = 1;
         Reset();
     }
 
@@ -92,6 +94,7 @@ public class Board
         newBoard.winner = this.winner;
         newBoard.activePlayer = this.activePlayer;
         newBoard.nonActivePlayer = this.nonActivePlayer;
+        newBoard.turns = this.turns;
 
         for (int i = 0; i < rows; i++)
         {
@@ -234,30 +237,26 @@ public class Board
 
     public float StaticEvaluator(uint playerId)
     {
-        uint otherPlayerId = 0;
-        if (playerId == 0)
-        {
-            otherPlayerId = 1;
-        }
-
         float selfScore = 0;
-        float opponentScore = 0;
 
         // If deadend reduce several points;
         selfScore += IsAtDeadEnd(playerId) * -100.0f;
-        opponentScore += IsAtDeadEnd(otherPlayerId) * -100.0f;
 
         // If at goal increase score
         selfScore += IsAtGoal(playerId) * 200.0f;
-        opponentScore += IsAtGoal(otherPlayerId) * 200.0f;
 
         // If far away from self goal then increase score
         selfScore += DistanceFromSelfGoal(playerId);
-        opponentScore += DistanceFromSelfGoal(otherPlayerId);
 
+        selfScore -= moves[playerId];
 
         return selfScore;
     }
+
+/*    private void MarkDirectionAvailbale(Direction dir, Coordinate cor)
+    {
+        nodes[cor.i, cor.j] = nodes[cor.i, cor.j] | ((uint)dir);
+    }*/
 
     private void MarkDirectionUnavailbale(Direction dir, Coordinate cor)
     {
@@ -308,11 +307,8 @@ public class Board
         moves[activePlayer]++;
 
         Coordinate next = GetCoordinateInDirection(curCordinate, direction);
-        if (!(next.j < 0 || next.j >= cols))
-        {
-            MarkDirectionUnavailbale(direction, curCordinate);
-            MarkDirectionUnavailbale(GetOppositeDirection(direction), next);
-        }
+        MarkDirectionUnavailbale(direction, curCordinate);
+        MarkDirectionUnavailbale(GetOppositeDirection(direction), next);
 
         Coordinate temp = curCordinate;
         curCordinate = next;
@@ -343,6 +339,7 @@ public class Board
             activePlayer = 0;
             nonActivePlayer = 1;
         }
+        turns++;
     }
 
     bool IsBitSet(uint b, int pos)
@@ -421,28 +418,30 @@ public class Board
     public List<List<Direction>> GetOptionsRecursive(uint focusPlayer, int maxDepth = -1)
     {
         List<List<Direction>> options = new List<List<Direction>>();
-
-        if (this.activePlayer != focusPlayer || maxDepth == 0)
+        if (this.gameOver || focusPlayer != this.activePlayer || maxDepth == 0)
         {
             return options;
         }
 
         // For each possible move at current state
-        foreach(Direction dir in GetOptions(this.curCordinate))
+        foreach (Direction dir in this.GetOptions(this.curCordinate))
         {
-            // Make move on hypothetical board and then 
+            // Make move on hypothetical board
             Board tempBoard = this.FastDeepCopy();
             tempBoard.MakeMove(dir);
-            if (tempBoard.gameOver)
+
+            // check if subMoves leads to an open node
+            if (tempBoard.AtOpenNode())
             {
-                // Add current direction as a possible move
                 options.Add(new List<Direction>());
                 options[options.Count - 1].Add(dir);
             }
-            else if (!tempBoard.AtOpenNode())
+            else
             {
-                // Get all possible options from current state
+                // Get all possible options from new state
                 List<List<Direction>> subOptions = tempBoard.GetOptionsRecursive(focusPlayer, maxDepth - 1);
+
+                MonoBehaviour.print(subOptions.Count);
                 foreach (List<Direction> subMoves in subOptions)
                 {
                     options.Add(new List<Direction>());
@@ -452,13 +451,7 @@ public class Board
                         options[options.Count - 1].Add(subMove);
                     }
                 }
-            } else
-            {
-                // Add current direction as a possible move
-                options.Add(new List<Direction>());
-                options[options.Count - 1].Add(dir);
             }
-
         }
 
         return options;

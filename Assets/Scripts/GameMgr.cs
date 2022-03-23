@@ -212,7 +212,10 @@ public class GameMgr : MonoBehaviour
             yield return null;
         }
         ball.transform.position = targetPos;
-        ShowOptions();
+        if (!players[(int) board.activePlayer].isAI)
+        {
+            ShowOptions();
+        }
         actionsEnabled = true;
     }
 
@@ -241,7 +244,7 @@ public class GameMgr : MonoBehaviour
         {
             if (players[(int)board.activePlayer].isAI)
             {
-                (float, List<Direction>) action = minMax.Solve(board, 1, board.activePlayer);
+                (float, List<Direction>) action = minMax.Solve(board, board.turns, board.activePlayer);
                 MakeMoves(action.Item2);
 
             } else
