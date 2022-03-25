@@ -55,6 +55,7 @@ public class GameMgr : MonoBehaviour
         RandomizePlayer();
         ball.transform.position = nodes[board.curCordinate.i, board.curCordinate.j].transform.position;
         ShowOptions();
+        players[(int)board.activePlayer].OnTurnStarted.Invoke();
     }
 
     private void Start()
@@ -198,6 +199,7 @@ public class GameMgr : MonoBehaviour
 
         players[0].Reset();
         players[1].Reset();
+        players[(int)board.activePlayer].OnTurnStarted.Invoke();
     }
 
     public void MakeMoves(List<Direction> moves)
@@ -265,8 +267,9 @@ public class GameMgr : MonoBehaviour
             nodes[cor.i, cor.j].interactable.active = true;
             nodes[cor.i, cor.j].interactable.associatedDirection = dir;
             activeNodes.Add(nodes[cor.i, cor.j]);
-            
         }
+        DirectionIndicator.instance.SetColor(players[(int)board.activePlayer].color);
+
         DirectionIndicator.instance.transform.position = ball.transform.position;
     }
 

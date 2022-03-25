@@ -34,4 +34,12 @@ public class DirectionIndicator : MonoBehaviour
     {
         directions[dir].SetActive(true);
     }
+
+    public void SetColor(Color color)
+    {
+        foreach (KeyValuePair<Direction, GameObject> pair in directions)
+        {
+            pair.Value.transform.GetComponent<Renderer>().material.color = color;
+        }
+    }
 }
