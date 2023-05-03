@@ -103,7 +103,10 @@
             unityInstance.SetFullscreen(0);
           }, 8000); 
           setTimeout(function () {
-            unityInstance.Quit();
+            unityInstance.Quit().then(() => {
+              
+            }
+            );
           }, 2000); 
         }).catch((message) => {
           alert(message);
