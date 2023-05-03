@@ -95,19 +95,13 @@
           loadingBar.style.display = "none";
           setTimeout(function () {
             unityInstance.SetFullscreen(1);
+            setTimeout(function () {
+              unityInstance.SetFullscreen(0);
+            }, 8000); 
           }, 2000); 
           fullscreenButton.onclick = () => {
             unityInstance.SetFullscreen(1);
           };
-          setTimeout(function () {
-            unityInstance.SetFullscreen(0);
-          }, 8000); 
-          setTimeout(function () {
-            unityInstance.Quit().then(() => {
-              
-            }
-            );
-          }, 2000); 
         }).catch((message) => {
           alert(message);
         });
